@@ -1,0 +1,661 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+  .section { margin: 2rem 0; }
+  .section-title { font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 16px 20px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+  .label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .value { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+  .mono { font-family: var(--font-mono); font-size: 12px; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+  .swatch-row { display: flex; gap: 4px; margin-bottom: 8px; }
+  .swatch { width: 28px; height: 28px; border-radius: 4px; border: 0.5px solid rgba(0,0,0,.08); flex-shrink: 0; }
+  .swatch.lg { width: 48px; height: 32px; border-radius: 6px; }
+  .font-demo { margin-bottom: 10px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; font-size: 13px; margin-bottom: 2px; }
+  .nav-item.active { background: #1A3C34; color: #fff; }
+  .nav-item.inactive { color: var(--color-text-secondary); }
+  .nav-dot { width: 14px; height: 14px; border-radius: 3px; background: var(--color-border-secondary); }
+  .nav-dot.active { background: rgba(255,255,255,.5); }
+  .badge-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .icon-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; }
+  .icon-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border-radius: 6px; background: var(--color-background-secondary); }
+  .icon-cell i { font-size: 18px; color: var(--color-text-secondary); }
+  .icon-cell span { font-size: 9px; color: var(--color-text-tertiary); text-align: center; }
+  .spacing-bar { height: 8px; background: #22543D22; border-radius: 2px; margin-bottom: 6px; }
+  .layout-box { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: 4px; padding: 6px 8px; font-size: 11px; color: var(--color-text-secondary); text-align: center; }
+  .comp-demo { border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; padding: 12px 14px; background: var(--color-background-primary); margin-bottom: 8px; }
+  .divider { height: 0.5px; background: var(--color-border-tertiary); margin: 6px 0; }
+  .pill-btn { display: inline-flex; align-items: center; gap: 6px; background: #1A3C34; color: #fff; border-radius: 8px; padding: 7px 16px; font-size: 13px; font-weight: 500; }
+  .pill-btn-outline { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 0.5px solid var(--color-border-secondary); border-radius: 8px; padding: 7px 16px; font-size: 13px; color: var(--color-text-primary); }
+  .tab-row { display: flex; gap: 2px; background: var(--color-background-secondary); border-radius: 8px; padding: 3px; }
+  .tab { padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; }
+  .tab.active { background: var(--color-background-primary); color: var(--color-text-primary); }
+  .tab.inactive { color: var(--color-text-tertiary); }
+  .stat-card { background: var(--color-background-secondary); border-radius: 8px; padding: 14px 16px; }
+  .stat-num { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+  .stat-lbl { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 2px; }
+  .progress-track { height: 6px; background: var(--color-border-tertiary); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; border-radius: 3px; background: #1A3C34; }
+  .progress-fill.light { background: #8BC38A; }
+  .table-row { display: flex; gap: 8px; padding: 7px 0; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 12px; align-items: center; }
+  .motion-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .tx-icon { width: 28px; height: 28px; border-radius: 6px; background: #E8F5EE; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .wizard-step { display: flex; align-items: center; gap: 6px; }
+  .wizard-circle { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; flex-shrink: 0; }
+  .wizard-line { flex: 1; height: 1px; background: var(--color-border-tertiary); }
+</style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+
+<div style="padding: 0 0 2rem;">
+
+  <!-- Header -->
+  <div style="margin-bottom: 24px;">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+      <div style="width:28px;height:28px;background:#1A3C34;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+        <div style="display:flex;gap:2px;">
+          <div style="width:5px;height:8px;background:#8BC38A;border-radius:1px;"></div>
+          <div style="width:5px;height:8px;background:#8BC38A;border-radius:1px;opacity:.6;"></div>
+        </div>
+      </div>
+      <span style="font-size:18px;font-weight:500;color:var(--color-text-primary);">ClientFlow CRM — Design System</span>
+    </div>
+    <p style="font-size:13px;color:var(--color-text-secondary);">Complete design reference · typography · color · layout · iconography · components · spacing · portals</p>
+  </div>
+
+  <!-- COLOR SYSTEM -->
+  <div class="section">
+    <div class="section-title">Color System</div>
+    <div class="grid-2" style="gap:12px;">
+      <div class="card">
+        <div class="label" style="margin-bottom:10px;">Primary Palette</div>
+        <div class="swatch-row">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div class="swatch lg" style="background:#1A3C34;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">#1A3C34</span>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Brand Dark</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div class="swatch lg" style="background:#22543D;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">#22543D</span>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Brand Mid</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div class="swatch lg" style="background:#8BC38A;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">#8BC38A</span>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Accent</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div class="swatch lg" style="background:#D4EDD4;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">#D4EDD4</span>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Light</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div class="swatch lg" style="background:#EEF8EE;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">#EEF8EE</span>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Surface</span>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="label" style="margin-bottom:8px;">Status / Semantic Colors</div>
+        <div class="swatch-row">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="swatch" style="background:#1A3C34;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Active</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="swatch" style="background:#E8C75A;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Pending</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="swatch" style="background:#E05252;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Overdue</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="swatch" style="background:#F0F0EE;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Draft</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="swatch" style="background:#22543D;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Completed</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label" style="margin-bottom:8px;">Sidebar Background Ramp</div>
+        <div style="display:flex;border-radius:8px;overflow:hidden;height:32px;margin-bottom:10px;">
+          <div style="flex:1;background:#EEF8EE;"></div>
+          <div style="flex:1;background:#D4EDD4;"></div>
+          <div style="flex:1;background:#8BC38A;"></div>
+          <div style="flex:1;background:#22543D;"></div>
+          <div style="flex:1;background:#1A3C34;"></div>
+          <div style="flex:1;background:#0F2820;"></div>
+        </div>
+        <div class="label" style="margin-bottom:8px;">Neutral / Text</div>
+        <div class="swatch-row" style="margin-bottom:10px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="swatch" style="background:#1A1A1A;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Text Pri</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="swatch" style="background:#555;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Text Sec</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="swatch" style="background:#999;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Text Ter</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="swatch" style="background:#fff;border:0.5px solid #ddd;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">White</span>
+          </div>
+        </div>
+        <div class="label" style="margin-bottom:6px;">Portal Role Colors</div>
+        <div class="swatch-row">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="swatch" style="background:#1A3C34;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Freelancer</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="swatch" style="background:#22543D;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Client</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="swatch" style="background:#8BC38A;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Admin</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="swatch" style="background:#F5F5F3;border:0.5px solid #ddd;"></div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);">Guest</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TYPOGRAPHY -->
+  <div class="section">
+    <div class="section-title">Typography</div>
+    <div class="card">
+      <div class="grid-2" style="gap:20px;">
+        <div>
+          <div class="label" style="margin-bottom:12px;">Typeface — Inter / DM Sans</div>
+          <div class="font-demo">
+            <div style="font-size:22px;font-weight:500;color:var(--color-text-primary);line-height:1.2;">Client Workspace</div>
+            <div style="font-size:10px;color:var(--color-text-tertiary);">Page heading · 22–24px · weight 500</div>
+          </div>
+          <div class="font-demo">
+            <div style="font-size:16px;font-weight:500;color:var(--color-text-primary);">Proposal #INV-2024-001</div>
+            <div style="font-size:10px;color:var(--color-text-tertiary);">Section title / card title · 16–18px · weight 500</div>
+          </div>
+          <div class="font-demo">
+            <div style="font-size:14px;font-weight:400;color:var(--color-text-primary);">Ahmad Farooq · UI/UX Designer</div>
+            <div style="font-size:10px;color:var(--color-text-tertiary);">Body / nav label · 13–14px · weight 400</div>
+          </div>
+          <div class="font-demo">
+            <div style="font-size:12px;font-weight:400;color:var(--color-text-secondary);">Branding assets uploaded · 3 files · 12MB</div>
+            <div style="font-size:10px;color:var(--color-text-tertiary);">Caption / metadata · 11–12px · weight 400</div>
+          </div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:10px;">Scale & Usage</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:0.5px solid var(--color-border-tertiary);padding-bottom:6px;">
+              <span style="font-size:20px;font-weight:500;color:var(--color-text-primary);">Aa</span>
+              <div style="text-align:right;"><div style="font-size:12px;color:var(--color-text-primary);">22–24px / 500</div><div style="font-size:10px;color:var(--color-text-tertiary);">Portal page titles</div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:0.5px solid var(--color-border-tertiary);padding-bottom:6px;">
+              <span style="font-size:16px;font-weight:500;color:var(--color-text-primary);">Aa</span>
+              <div style="text-align:right;"><div style="font-size:12px;color:var(--color-text-primary);">16–18px / 500</div><div style="font-size:10px;color:var(--color-text-tertiary);">Workspace headers, card titles</div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:0.5px solid var(--color-border-tertiary);padding-bottom:6px;">
+              <span style="font-size:14px;font-weight:400;color:var(--color-text-primary);">Aa</span>
+              <div style="text-align:right;"><div style="font-size:12px;color:var(--color-text-primary);">13–14px / 400</div><div style="font-size:10px;color:var(--color-text-tertiary);">Nav, table body, form labels</div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <span style="font-size:11px;font-weight:400;color:var(--color-text-secondary);">Aa</span>
+              <div style="text-align:right;"><div style="font-size:12px;color:var(--color-text-primary);">11–12px / 400</div><div style="font-size:10px;color:var(--color-text-tertiary);">Captions, timestamps, badges</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="section">
+    <div class="section-title">Layout System</div>
+    <div class="card" style="margin-bottom:12px;">
+      <div class="label" style="margin-bottom:10px;">Page-level grid — fixed sidebar + fluid content (applies to all 3 portals)</div>
+      <div style="display:flex;gap:6px;height:72px;border-radius:8px;overflow:hidden;border:0.5px solid var(--color-border-tertiary);">
+        <div style="width:130px;flex-shrink:0;background:#EEF8EE;display:flex;align-items:center;justify-content:center;font-size:10px;color:#22543D;">Sidebar · 160px</div>
+        <div style="flex:1;background:var(--color-background-secondary);display:flex;align-items:center;padding:0 14px;gap:8px;">
+          <div style="flex:1;background:#E8F5E8;border-radius:6px;height:40px;"></div>
+          <div style="flex:1;background:#E8F5E8;border-radius:6px;height:40px;"></div>
+          <div style="flex:1;background:#E8F5E8;border-radius:6px;height:40px;"></div>
+          <div style="flex:1;background:#E8F5E8;border-radius:6px;height:40px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-3" style="gap:10px;">
+      <div class="card">
+        <div class="label">Sidebar</div>
+        <div class="value mono">~160px fixed</div>
+        <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:4px;">Light green bg · logo top · nav center · AI assistant CTA bottom</div>
+      </div>
+      <div class="card">
+        <div class="label">Content Padding</div>
+        <div class="value mono">28–32px</div>
+        <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:4px;">Horizontal padding inside main content area</div>
+      </div>
+      <div class="card">
+        <div class="label">Card Gap</div>
+        <div class="value mono">16–24px</div>
+        <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:4px;">Consistent gap between cards and content blocks</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;" class="grid-2">
+      <div class="card">
+        <div class="label" style="margin-bottom:8px;">Content grid patterns</div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="display:flex;gap:4px;">
+            <div class="layout-box" style="flex:1;">1 col</div>
+            <div style="font-size:10px;color:var(--color-text-tertiary);display:flex;align-items:center;padding:0 6px;">→</div>
+            <div style="flex:3;font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;">Project intake wizard, proposal editor</div>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <div class="layout-box" style="flex:1;">2 col</div>
+            <div style="font-size:10px;color:var(--color-text-tertiary);display:flex;align-items:center;padding:0 6px;">→</div>
+            <div style="flex:3;font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;">Client list + detail pane, chat + files</div>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <div class="layout-box" style="flex:1;">3 col</div>
+            <div style="font-size:10px;color:var(--color-text-tertiary);display:flex;align-items:center;padding:0 6px;">→</div>
+            <div style="flex:3;font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;">Dashboard widgets (stats, activity, to-do)</div>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <div class="layout-box" style="flex:1;">4 col</div>
+            <div style="font-size:10px;color:var(--color-text-tertiary);display:flex;align-items:center;padding:0 6px;">→</div>
+            <div style="flex:3;font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;">Stat tiles, member grid, file grid</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label" style="margin-bottom:8px;">Border radius tokens</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:20px;background:#EEF8EE;border:0.5px solid #8BC38A;border-radius:3px;"></div>
+            <span style="font-size:11px;color:var(--color-text-secondary);">4px · badges, tags, table cells</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:20px;background:#EEF8EE;border:0.5px solid #8BC38A;border-radius:6px;"></div>
+            <span style="font-size:11px;color:var(--color-text-secondary);">6–8px · inputs, nav items, small cards</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:20px;background:#EEF8EE;border:0.5px solid #8BC38A;border-radius:10px;"></div>
+            <span style="font-size:11px;color:var(--color-text-secondary);">10–12px · content cards, workspace panels</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:20px;background:#1A3C34;border-radius:20px;"></div>
+            <span style="font-size:11px;color:var(--color-text-secondary);">Pill · primary CTA buttons</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ICONOGRAPHY -->
+  <div class="section">
+    <div class="section-title">Iconography</div>
+    <div class="card">
+      <div class="grid-2" style="gap:16px;">
+        <div>
+          <div class="label" style="margin-bottom:8px;">Style — Tabler Icons outlined, 18–20px, 2px stroke weight</div>
+          <div class="icon-grid">
+            <div class="icon-cell"><i class="ti ti-layout-dashboard"></i><span>dashboard</span></div>
+            <div class="icon-cell"><i class="ti ti-users"></i><span>clients</span></div>
+            <div class="icon-cell"><i class="ti ti-briefcase"></i><span>workspace</span></div>
+            <div class="icon-cell"><i class="ti ti-file-invoice"></i><span>invoice</span></div>
+            <div class="icon-cell"><i class="ti ti-file-text"></i><span>proposal</span></div>
+            <div class="icon-cell"><i class="ti ti-writing"></i><span>contract</span></div>
+            <div class="icon-cell"><i class="ti ti-checklist"></i><span>to-do</span></div>
+            <div class="icon-cell"><i class="ti ti-message-circle"></i><span>chat</span></div>
+            <div class="icon-cell"><i class="ti ti-robot"></i><span>AI assist</span></div>
+            <div class="icon-cell"><i class="ti ti-link"></i><span>referral</span></div>
+            <div class="icon-cell"><i class="ti ti-upload"></i><span>upload</span></div>
+            <div class="icon-cell"><i class="ti ti-download"></i><span>download</span></div>
+            <div class="icon-cell"><i class="ti ti-user-plus"></i><span>add member</span></div>
+            <div class="icon-cell"><i class="ti ti-bell"></i><span>notifs</span></div>
+            <div class="icon-cell"><i class="ti ti-settings"></i><span>settings</span></div>
+            <div class="icon-cell"><i class="ti ti-search"></i><span>search</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:8px;">Icon context rules</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:32px;height:32px;background:#EEF8EE;border-radius:8px;display:flex;align-items:center;justify-content:center;"><i class="ti ti-layout-dashboard" style="font-size:16px;color:#1A3C34;"></i></div>
+              <span style="font-size:12px;color:var(--color-text-secondary);">Nav icon — 16px, green bg pill on active</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:32px;height:32px;background:#E8F5E8;border-radius:8px;display:flex;align-items:center;justify-content:center;"><i class="ti ti-briefcase" style="font-size:18px;color:#1A3C34;"></i></div>
+              <span style="font-size:12px;color:var(--color-text-secondary);">Action tab icon — 18px, #1A3C34, card header</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:32px;height:32px;background:#EEF8EE;border-radius:6px;display:flex;align-items:center;justify-content:center;"><i class="ti ti-file-invoice" style="font-size:16px;color:#22543D;"></i></div>
+              <span style="font-size:12px;color:var(--color-text-secondary);">Document category — 16px, colored bg chip</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:8px;height:8px;background:#E8C75A;border-radius:50%;"></div>
+              <span style="font-size:12px;color:var(--color-text-secondary);">Status dot — 8px circle, color-coded per status</span>
+            </div>
+          </div>
+          <div class="divider" style="margin:12px 0;"></div>
+          <div class="label">Brand mark — ClientFlow logo</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+            <div style="width:28px;height:28px;background:#1A3C34;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+              <div style="display:flex;gap:2px;">
+                <div style="width:5px;height:8px;background:#8BC38A;border-radius:1px;"></div>
+                <div style="width:5px;height:8px;background:#8BC38A;border-radius:1px;opacity:.6;"></div>
+              </div>
+            </div>
+            <span style="font-size:14px;font-weight:500;color:#1A3C34;">CLIENTFLOW</span>
+            <span style="font-size:10px;color:var(--color-text-tertiary);">Bar-mark + wordmark · All-caps</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPONENTS -->
+  <div class="section">
+    <div class="section-title">Component Library</div>
+    <div class="grid-2" style="gap:12px;">
+
+      <!-- Navigation — Freelancer Portal -->
+      <div class="card">
+        <div class="label" style="margin-bottom:8px;">Navigation sidebar — Freelancer portal</div>
+        <div class="nav-item active"><i class="ti ti-layout-dashboard" style="font-size:14px;"></i><span style="font-size:12px;">Dashboard</span></div>
+        <div class="nav-item inactive"><i class="ti ti-users" style="font-size:14px;"></i><span style="font-size:12px;">Clients</span><i class="ti ti-chevron-down" style="font-size:12px;margin-left:auto;"></i></div>
+        <div class="nav-item inactive"><i class="ti ti-briefcase" style="font-size:14px;"></i><span style="font-size:12px;">Workspaces</span></div>
+        <div class="nav-item inactive"><i class="ti ti-file-invoice" style="font-size:14px;"></i><span style="font-size:12px;">Invoices</span></div>
+        <div class="nav-item inactive"><i class="ti ti-message-circle" style="font-size:14px;"></i><span style="font-size:12px;">Messages</span><span style="background:#E05252;color:#fff;font-size:9px;padding:1px 5px;border-radius:10px;margin-left:auto;">3</span></div>
+        <div class="nav-item inactive"><i class="ti ti-robot" style="font-size:14px;"></i><span style="font-size:12px;">AI Assistant</span></div>
+        <div class="nav-item inactive"><i class="ti ti-settings" style="font-size:14px;"></i><span style="font-size:12px;">Settings</span></div>
+      </div>
+
+      <!-- Navigation — Client Portal -->
+      <div class="card">
+        <div class="label" style="margin-bottom:8px;">Navigation sidebar — Client portal</div>
+        <div class="nav-item active"><i class="ti ti-layout-dashboard" style="font-size:14px;"></i><span style="font-size:12px;">My Dashboard</span></div>
+        <div class="nav-item inactive"><i class="ti ti-briefcase" style="font-size:14px;"></i><span style="font-size:12px;">My Workspace</span></div>
+        <div class="nav-item inactive"><i class="ti ti-checklist" style="font-size:14px;"></i><span style="font-size:12px;">To-Do List</span></div>
+        <div class="nav-item inactive"><i class="ti ti-file-text" style="font-size:14px;"></i><span style="font-size:12px;">Documents</span></div>
+        <div class="nav-item inactive"><i class="ti ti-message-circle" style="font-size:14px;"></i><span style="font-size:12px;">Feedback Chat</span><span style="background:#E05252;color:#fff;font-size:9px;padding:1px 5px;border-radius:10px;margin-left:auto;">1</span></div>
+        <div class="nav-item inactive"><i class="ti ti-robot" style="font-size:14px;"></i><span style="font-size:12px;">AI Assistant</span></div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="card">
+        <div class="label" style="margin-bottom:10px;">Buttons</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="pill-btn" style="width:fit-content;cursor:pointer;"><i class="ti ti-plus" style="font-size:14px;"></i> New Client Request</div>
+          <div class="pill-btn" style="width:fit-content;background:#22543D;cursor:pointer;"><i class="ti ti-send" style="font-size:14px;"></i> Send Proposal</div>
+          <div class="pill-btn-outline" style="width:fit-content;cursor:pointer;">Cancel</div>
+          <div style="display:inline-flex;align-items:center;gap:6px;background:#8BC38A22;border:0.5px solid #8BC38A;border-radius:8px;padding:7px 16px;font-size:13px;color:#1A3C34;width:fit-content;"><i class="ti ti-robot" style="font-size:14px;"></i> Ask AI</div>
+        </div>
+      </div>
+
+      <!-- Status Badges -->
+      <div class="card">
+        <div class="label" style="margin-bottom:8px;">Status badges — project & document states</div>
+        <div class="badge-row">
+          <span class="badge" style="background:#1A3C3420;color:#1A3C34;">Active</span>
+          <span class="badge" style="background:#E8C75A30;color:#8B7A20;">Pending</span>
+          <span class="badge" style="background:#E0525220;color:#E05252;">Overdue</span>
+          <span class="badge" style="background:#88888820;color:#555;">Draft</span>
+          <span class="badge" style="background:#22543D20;color:#22543D;">Completed</span>
+          <span class="badge" style="background:#8BC38A30;color:#22543D;">Signed</span>
+          <span class="badge" style="background:#E8C75A30;color:#8B7A20;">In Review</span>
+        </div>
+        <div class="label" style="margin:10px 0 6px;">Project progress bars</div>
+        <div>
+          <div class="progress-track"><div class="progress-fill" style="width:65%;"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-tertiary);margin-top:2px;"><span>Design Phase · 65%</span><span>13 of 20 tasks</span></div>
+        </div>
+        <div style="margin-top:6px;">
+          <div class="progress-track"><div style="height:100%;width:40%;background:linear-gradient(90deg,#1A3C34 40%,#8BC38A 40%);border-radius:3px;"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-tertiary);margin-top:2px;"><span>Development Phase · 40%</span><span>8 of 20 tasks</span></div>
+        </div>
+      </div>
+
+      <!-- Wizard Steps (Intake Form) -->
+      <div class="card">
+        <div class="label" style="margin-bottom:12px;">Project intake wizard — step indicator</div>
+        <div style="display:flex;align-items:center;gap:0;margin-bottom:14px;">
+          <div class="wizard-step" style="flex:1;">
+            <div class="wizard-circle" style="background:#1A3C34;color:#fff;">1</div>
+            <div class="wizard-line" style="background:#1A3C34;"></div>
+          </div>
+          <div class="wizard-step" style="flex:1;">
+            <div class="wizard-circle" style="background:#1A3C34;color:#fff;">2</div>
+            <div class="wizard-line" style="background:#1A3C34;"></div>
+          </div>
+          <div class="wizard-step" style="flex:1;">
+            <div class="wizard-circle" style="background:#8BC38A;color:#fff;">3</div>
+            <div class="wizard-line" style="background:var(--color-border-tertiary);"></div>
+          </div>
+          <div class="wizard-step">
+            <div class="wizard-circle" style="background:var(--color-background-secondary);color:var(--color-text-tertiary);border:0.5px solid var(--color-border-tertiary);">4</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--color-text-tertiary);">
+          <span>Project Info</span>
+          <span>Branding</span>
+          <span style="color:#1A3C34;font-weight:500;">Assets</span>
+          <span>Review</span>
+        </div>
+      </div>
+
+      <!-- Workspace card -->
+      <div class="card">
+        <div class="label" style="margin-bottom:8px;">Workspace card component</div>
+        <div style="background:#1A3C34;border-radius:12px;padding:14px 16px;color:#fff;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+            <span style="font-size:11px;opacity:.7;">E-commerce Brand Redesign</span>
+            <span class="badge" style="background:rgba(139,195,138,.25);color:#8BC38A;font-size:9px;">Active</span>
+          </div>
+          <div style="font-size:18px;font-weight:500;margin-bottom:2px;">Ahmad Farooq</div>
+          <div style="font-size:10px;opacity:.6;">Started 12 Apr 2025 · 3 members</div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <div style="flex:1;"><div style="font-size:9px;opacity:.6;">Progress</div><div style="font-size:13px;font-weight:500;">65%</div></div>
+            <div style="flex:1;"><div style="font-size:9px;opacity:.6;">Tasks</div><div style="font-size:13px;font-weight:500;">13/20</div></div>
+            <div style="flex:1;"><div style="font-size:9px;opacity:.6;">Due</div><div style="font-size:13px;font-weight:500;">30 Jun</div></div>
+          </div>
+        </div>
+        <div style="background:#F5F5F3;border:0.5px solid var(--color-border-tertiary);border-radius:10px;padding:10px 14px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--color-text-secondary);">SaaS Dashboard UI</span><span style="font-size:10px;background:#fff;border:0.5px solid #ddd;padding:2px 7px;border-radius:4px;">Pending</span></div>
+          <div style="font-size:16px;font-weight:500;margin-top:4px;">Sara Khan</div>
+          <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px;">Awaiting client approval</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="card">
+        <div class="label" style="margin-bottom:8px;">Tab bar — workspace sections</div>
+        <div class="tab-row" style="margin-bottom:12px;">
+          <div class="tab active">Overview</div>
+          <div class="tab inactive">Files</div>
+          <div class="tab inactive">Chat</div>
+          <div class="tab inactive">Docs</div>
+        </div>
+        <div class="label" style="margin-bottom:8px;">Quick action tabs (icon + label)</div>
+        <div style="display:flex;gap:6px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--color-background-secondary);border-radius:8px;padding:8px 14px;flex:1;">
+            <i class="ti ti-file-text" style="font-size:18px;color:#1A3C34;"></i>
+            <span style="font-size:11px;color:var(--color-text-secondary);">Proposal</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--color-background-secondary);border-radius:8px;padding:8px 14px;flex:1;">
+            <i class="ti ti-file-invoice" style="font-size:18px;color:#1A3C34;"></i>
+            <span style="font-size:11px;color:var(--color-text-secondary);">Invoice</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--color-background-secondary);border-radius:8px;padding:8px 14px;flex:1;">
+            <i class="ti ti-writing" style="font-size:18px;color:#1A3C34;"></i>
+            <span style="font-size:11px;color:var(--color-text-secondary);">Contract</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--color-background-secondary);border-radius:8px;padding:8px 14px;flex:1;">
+            <i class="ti ti-download" style="font-size:18px;color:#1A3C34;"></i>
+            <span style="font-size:11px;color:var(--color-text-secondary);">Assets</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data table row -->
+      <div class="card">
+        <div class="label" style="margin-bottom:8px;">Table row pattern — client / request list</div>
+        <div class="table-row" style="font-weight:500;font-size:11px;color:var(--color-text-tertiary);">
+          <div style="flex:2;">Client / Project</div>
+          <div style="flex:2;">Type</div>
+          <div style="flex:1;text-align:right;">Value</div>
+          <div style="flex:1;text-align:right;">Status</div>
+        </div>
+        <div class="table-row">
+          <div style="display:flex;align-items:center;gap:8px;flex:2;">
+            <div class="tx-icon"><i class="ti ti-user" style="font-size:13px;color:#1A3C34;"></i></div>
+            <div><div style="font-size:12px;">Ahmad Farooq</div><div style="font-size:10px;color:var(--color-text-tertiary);">Brand Redesign</div></div>
+          </div>
+          <div style="flex:2;font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;gap:4px;"><span style="font-size:10px;background:#1A3C3415;padding:1px 5px;border-radius:3px;">Design</span> E-commerce</div>
+          <div style="flex:1;text-align:right;font-size:12px;color:#22543D;">$2,400</div>
+          <div style="flex:1;text-align:right;"><span class="badge" style="background:#1A3C3420;color:#1A3C34;">Active</span></div>
+        </div>
+        <div class="table-row" style="border-bottom:none;">
+          <div style="display:flex;align-items:center;gap:8px;flex:2;">
+            <div class="tx-icon"><i class="ti ti-user" style="font-size:13px;color:#1A3C34;"></i></div>
+            <div><div style="font-size:12px;">Sara Khan</div><div style="font-size:10px;color:var(--color-text-tertiary);">SaaS Dashboard</div></div>
+          </div>
+          <div style="flex:2;font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;">Development</div>
+          <div style="flex:1;text-align:right;font-size:12px;color:#22543D;">$3,800</div>
+          <div style="flex:1;text-align:right;"><span class="badge" style="background:#E8C75A30;color:#8B7A20;">Pending</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PORTAL ROLE CARDS -->
+  <div class="section">
+    <div class="section-title">Portal Architecture — Role Separation</div>
+    <div class="grid-3" style="gap:12px;">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="width:28px;height:28px;background:#1A3C34;border-radius:6px;display:flex;align-items:center;justify-content:center;"><i class="ti ti-briefcase" style="font-size:14px;color:#fff;"></i></div>
+          <span style="font-size:13px;font-weight:500;color:var(--color-text-primary);">Freelancer Portal</span>
+        </div>
+        <div style="font-size:11px;color:var(--color-text-secondary);line-height:1.7;">
+          Dashboard · Client list · Workspaces · Proposals · Invoices · Contracts · To-Do · Team members · AI assistant · Referral code generator
+        </div>
+        <div style="margin-top:10px;"><span class="badge" style="background:#1A3C3420;color:#1A3C34;">Agency owner · Solo freelancer</span></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="width:28px;height:28px;background:#22543D;border-radius:6px;display:flex;align-items:center;justify-content:center;"><i class="ti ti-user" style="font-size:14px;color:#fff;"></i></div>
+          <span style="font-size:13px;font-weight:500;color:var(--color-text-primary);">Client Portal</span>
+        </div>
+        <div style="font-size:11px;color:var(--color-text-secondary);line-height:1.7;">
+          Dashboard · Referral code link · Intake wizard form · Workspace tracker · Documents view · Feedback chat · To-Do · AI assistant
+        </div>
+        <div style="margin-top:10px;"><span class="badge" style="background:#22543D20;color:#22543D;">End client · Project owner</span></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="width:28px;height:28px;background:#8BC38A;border-radius:6px;display:flex;align-items:center;justify-content:center;"><i class="ti ti-shield" style="font-size:14px;color:#1A3C34;"></i></div>
+          <span style="font-size:13px;font-weight:500;color:var(--color-text-primary);">Admin Portal</span>
+        </div>
+        <div style="font-size:11px;color:var(--color-text-secondary);line-height:1.7;">
+          User management · All workspaces · Platform analytics · Subscription control · Support tickets · Audit logs
+        </div>
+        <div style="margin-top:10px;"><span class="badge" style="background:#8BC38A30;color:#22543D;">Platform administrator</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPACING -->
+  <div class="section">
+    <div class="section-title">Spacing System</div>
+    <div class="card">
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div class="spacing-bar" style="width:20px;height:4px;background:#8BC38A55;"></div>
+          <span style="font-size:9px;color:var(--color-text-tertiary);">4px</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:20px;height:8px;background:#8BC38A77;border-radius:2px;"></div>
+          <span style="font-size:9px;color:var(--color-text-tertiary);">8px</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:20px;height:12px;background:#8BC38A99;border-radius:2px;"></div>
+          <span style="font-size:9px;color:var(--color-text-tertiary);">12px</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:20px;height:16px;background:#8BC38ABB;border-radius:2px;"></div>
+          <span style="font-size:9px;color:var(--color-text-tertiary);">16px</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:20px;height:24px;background:#8BC38ADD;border-radius:2px;"></div>
+          <span style="font-size:9px;color:var(--color-text-tertiary);">24px</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:20px;height:32px;background:#1A3C3499;border-radius:2px;"></div>
+          <span style="font-size:9px;color:var(--color-text-tertiary);">32px</span>
+        </div>
+        <div style="flex:1;font-size:11px;color:var(--color-text-secondary);padding-left:12px;">
+          Base unit: <strong style="font-weight:500;">4px</strong> · Scale: 4, 8, 12, 16, 20, 24, 32, 48px · Internal padding ~16–20px · Card gaps ~16–24px
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DESIGN TOKENS SUMMARY -->
+  <div class="section">
+    <div class="section-title">Design Principles & Summary</div>
+    <div class="grid-3" style="gap:10px;">
+      <div class="stat-card">
+        <div class="stat-lbl">Visual Theme</div>
+        <div style="font-size:14px;font-weight:500;color:#1A3C34;">Trust-first agency</div>
+        <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px;">Green-led, professional, clean</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Elevation model</div>
+        <div style="font-size:14px;font-weight:500;color:var(--color-text-primary);">Flat + borders</div>
+        <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px;">No shadows — only bg and border depth</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Motion</div>
+        <div style="font-size:14px;font-weight:500;color:var(--color-text-primary);">Minimal</div>
+        <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px;">State transitions only, no decorative animation</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Icon style</div>
+        <div style="font-size:14px;font-weight:500;color:var(--color-text-primary);">Tabler outlined 2px</div>
+        <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px;">Consistent stroke weight throughout</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Interaction targets</div>
+        <div style="font-size:14px;font-weight:500;color:var(--color-text-primary);">36–44px</div>
+        <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px;">Accessible touch/click targets throughout</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Density</div>
+        <div style="font-size:14px;font-weight:500;color:var(--color-text-primary);">Medium</div>
+        <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px;">Comfortable spacing, not compact</div>
+      </div>
+    </div>
+  </div>
+
+</div>
