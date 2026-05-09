@@ -3,21 +3,50 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-brand-dark: #1A3C34;
+  --color-brand-mid: #22543D;
+  --color-brand-accent: #8BC38A;
+  --color-brand-light: #D4EDD4;
+  --color-brand-surface: #EEF8EE;
+  
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #555555;
+  --color-text-tertiary: #999999;
+  
+  --color-background-primary: #FFFFFF;
+  --color-background-secondary: #F9FAFB;
+  
+  --color-border-primary: #E5E7EB;
+  --color-border-secondary: #D1D5DB;
+  --color-border-tertiary: rgba(0, 0, 0, 0.08);
+  
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Fira Code', monospace;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--color-text-primary);
+  background: var(--color-background-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .section-title {
+    @apply text-[11px] font-medium tracking-[0.08em] uppercase text-[#999999] mb-3 pb-2 border-b-[0.5px] border-[rgba(0,0,0,0.08)];
+  }
+  
+  .card {
+    @apply bg-white border-[0.5px] border-[rgba(0,0,0,0.08)] rounded-[12px] p-4 md:p-5;
+  }
+  
+  .pill-btn {
+    @apply inline-flex items-center gap-2 bg-[#1A3C34] text-white rounded-[8px] px-4 py-[7px] text-[13px] font-medium transition-colors hover:bg-[#22543D];
+  }
+  
+  .pill-btn-outline {
+    @apply inline-flex items-center gap-2 bg-transparent border-[0.5px] border-gray-300 rounded-[8px] px-4 py-[7px] text-[13px] text-[#1A1A1A] transition-colors hover:bg-gray-50;
+  }
 }
 
 @layer utilities {
