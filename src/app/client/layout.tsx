@@ -1,5 +1,6 @@
 import React from "react";
 import Sidebar from "@/components/Sidebar";
+import AIAssistant from "@/components/AIAssistant";
 
 export default function ClientLayout({
   children,
@@ -12,6 +13,7 @@ export default function ClientLayout({
       <main className="flex-1 overflow-y-auto px-[28px] py-[32px] md:px-[32px]">
         {children}
       </main>
+      <AIAssistant userRole="client" />
     </div>
   );
 }

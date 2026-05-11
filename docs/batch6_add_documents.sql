@@ -50,3 +50,36 @@ select tablename from pg_tables where schemaname = 'public' and tablename = 'wor
 -- ==========================================
 -- SUCCESS! Documents table created.
 -- ==========================================
+
+-- ==========================================
+-- BATCH 7: AI Assistant Conversations Table
+-- ==========================================
+
+create table if not exists ai_conversations (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references profiles(id) on delete cascade,
+  workspace_id uuid references workspaces(id) on delete cascade,
+  role text check (role in ('user', 'assistant')),
+  content text not null,
+  context jsonb,
+  created_at timestamptz default now()
+);
+
+alter table ai_conversations enable row level security;
+
+-- Drop existing policies if they exist
+drop policy if exists "Users can view their own conversations" on ai_conversations;
+drop policy if exists "Users can insert their own conversations" on ai_conversations;
+drop policy if exists "Users can delete their own conversations" on ai_conversations;
+
+-- RLS Policies
+create policy "Users can view their own conversations" on ai_conversations for select using (user_id = auth.uid());
+create policy "Users can insert their own conversations" on ai_conversations for insert with check (user_id = auth.uid());
+create policy "Users can delete their own conversations" on ai_conversations for delete using (user_id = auth.uid());
+
+-- Verify
+select tablename from pg_tables where schemaname = 'public' and tablename = 'ai_conversations';
+
+-- ==========================================
+-- SUCCESS! AI conversations table created.
+-- ==========================================
