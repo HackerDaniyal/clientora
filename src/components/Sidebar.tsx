@@ -46,9 +46,9 @@ const navItems: Record<"freelancer" | "client" | "admin", NavItem[]> = {
   ],
   client: [
     { label: "My Dashboard", href: "/client/dashboard", icon: IconLayoutDashboard },
+    { label: "Documents", href: "/client/documents", icon: IconFileText },
     { label: "My Workspace", href: "/client/workspace", icon: IconBriefcase },
     { label: "To-Do List", href: "/client/todos", icon: IconChecklist },
-    { label: "Documents", href: "/client/documents", icon: IconFileText },
     { label: "Feedback Chat", href: "/client/chat", icon: IconMessageCircle, badge: 1 },
     { label: "AI Assistant", href: "/client/ai-assistant", icon: IconRobot },
   ],

@@ -7,6 +7,7 @@ import {
   IconChecklist, 
   IconMessageCircle, 
   IconUsers,
+  IconFileText,
   IconArrowLeft,
   IconPlus,
   IconTrash,
@@ -15,11 +16,12 @@ import {
   IconPaperclip,
   IconDownload,
   IconClock,
-  IconChartBar
+  IconChartBar,
+  IconEye
 } from "@tabler/icons-react";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { createTask, toggleTask, sendMessage, inviteMember, removeMember, logActivity } from "./actions";
+import { createTask, toggleTask, sendMessage, inviteMember, removeMember, logActivity, createDocument, sendDocument, deleteDocument } from "./actions";
 
 interface WorkspaceClientProps {
   workspace: any;
@@ -29,9 +31,10 @@ interface WorkspaceClientProps {
   activityLog: any[];
   userRole: string;
   workspaceId: string;
+  documents?: any[];
 }
 
-type TabType = "overview" | "assets" | "todo" | "chat" | "members";
+type TabType = "overview" | "assets" | "todo" | "chat" | "documents" | "members";
 
 export default function WorkspaceClient({
   workspace,
@@ -40,7 +43,8 @@ export default function WorkspaceClient({
   members: initialMembers,
   activityLog: initialActivityLog,
   userRole,
-  workspaceId
+  workspaceId,
+  documents: initialDocuments = []
 }: WorkspaceClientProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -49,11 +53,14 @@ export default function WorkspaceClient({
   const [messages, setMessages] = useState(initialMessages);
   const [members, setMembers] = useState(initialMembers);
   const [activityLog, setActivityLog] = useState(initialActivityLog);
+  const [documents, setDocuments] = useState(initialDocuments);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState("medium");
   const [newMessage, setNewMessage] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [selectedDocType, setSelectedDocType] = useState<'proposal' | 'invoice' | 'contract'>('proposal');
 
   // Realtime subscriptions
   useEffect(() => {
@@ -190,6 +197,7 @@ export default function WorkspaceClient({
     { id: "assets" as TabType, label: "Assets", icon: IconFiles },
     { id: "todo" as TabType, label: "To-Do", icon: IconChecklist },
     { id: "chat" as TabType, label: "Chat", icon: IconMessageCircle },
+    { id: "documents" as TabType, label: "Documents", icon: IconFileText },
     { id: "members" as TabType, label: "Members", icon: IconUsers },
   ];
 
@@ -486,6 +494,128 @@ export default function WorkspaceClient({
                   <IconSend size={18} />
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Documents Tab */}
+        {activeTab === "documents" && (
+          <div className="space-y-6">
+            {/* Create Document Buttons */}
+            {userRole === "editor" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button
+                  onClick={() => {
+                    setSelectedDocType('proposal');
+                    setShowDocumentModal(true);
+                  }}
+                  className="card bg-white p-6 hover:shadow-md transition-all text-left border-2 border-transparent hover:border-brand-accent"
+                >
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
+                    <IconFileText size={24} className="text-blue-600" />
+                  </div>
+                  <h4 className="text-[15px] font-medium text-brand-dark mb-1">New Proposal</h4>
+                  <p className="text-[12px] text-text-secondary">Create project proposal</p>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setSelectedDocType('invoice');
+                    setShowDocumentModal(true);
+                  }}
+                  className="card bg-white p-6 hover:shadow-md transition-all text-left border-2 border-transparent hover:border-brand-accent"
+                >
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-3">
+                    <IconFileText size={24} className="text-green-600" />
+                  </div>
+                  <h4 className="text-[15px] font-medium text-brand-dark mb-1">New Invoice</h4>
+                  <p className="text-[12px] text-text-secondary">Bill for services</p>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setSelectedDocType('contract');
+                    setShowDocumentModal(true);
+                  }}
+                  className="card bg-white p-6 hover:shadow-md transition-all text-left border-2 border-transparent hover:border-brand-accent"
+                >
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-3">
+                    <IconFileText size={24} className="text-purple-600" />
+                  </div>
+                  <h4 className="text-[15px] font-medium text-brand-dark mb-1">New Contract</h4>
+                  <p className="text-[12px] text-text-secondary">Create agreement</p>
+                </button>
+              </div>
+            )}
+
+            {/* Documents List */}
+            <div className="card bg-white p-6">
+              <h3 className="text-lg font-semibold text-brand-dark mb-4">All Documents ({documents.length})</h3>
+              {documents.length === 0 ? (
+                <p className="text-text-secondary text-center py-8">No documents yet. {userRole === "editor" && "Create one above!"}</p>
+              ) : (
+                <div className="space-y-3">
+                  {documents.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-4 rounded-lg border border-brand-light/50 hover:border-brand-accent transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          doc.type === 'proposal' ? 'bg-blue-100' :
+                          doc.type === 'invoice' ? 'bg-green-100' :
+                          'bg-purple-100'
+                        }`}>
+                          <IconFileText size={20} className={
+                            doc.type === 'proposal' ? 'text-blue-600' :
+                            doc.type === 'invoice' ? 'text-green-600' :
+                            'text-purple-600'
+                          } />
+                        </div>
+                        <div>
+                          <p className="text-[14px] font-medium text-brand-dark">{doc.title}</p>
+                          <p className="text-[12px] text-text-tertiary">
+                            {doc.document_number} · {new Date(doc.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {doc.amount && (
+                          <span className="text-[14px] font-semibold text-brand-dark">${doc.amount}</span>
+                        )}
+                        <span className={`badge text-[11px] ${
+                          doc.status === 'draft' ? 'bg-gray-100 text-gray-700' :
+                          doc.status === 'sent' ? 'bg-blue-100 text-blue-700' :
+                          doc.status === 'viewed' ? 'bg-purple-100 text-purple-700' :
+                          doc.status === 'approved' ? 'bg-green-100 text-green-700' :
+                          doc.status === 'paid' ? 'bg-green-100 text-green-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {doc.status}
+                        </span>
+                        {userRole === "editor" && doc.status === 'draft' && (
+                          <button
+                            onClick={() => sendDocument(doc.id)}
+                            className="p-2 hover:bg-brand-accent/10 text-brand-accent rounded-lg transition-colors"
+                            title="Send to client"
+                          >
+                            <IconSend size={16} />
+                          </button>
+                        )}
+                        {userRole === "editor" && (
+                          <button
+                            onClick={() => deleteDocument(doc.id, workspaceId)}
+                            className="p-2 hover:bg-red-100 text-text-secondary hover:text-red-600 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <IconTrash size={16} />
+                          </button>
+                        )}
+                        <button className="p-2 hover:bg-brand-light/30 text-text-secondary rounded-lg transition-colors" title="View">
+                          <IconEye size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

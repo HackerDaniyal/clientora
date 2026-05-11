@@ -192,3 +192,121 @@ export async function logActivity(workspaceId: string, action: string, entityTyp
 
   revalidatePath(`/workspace/${workspaceId}`)
 }
+
+export async function createDocument(workspaceId: string, type: string, title: string, content: any, amount?: number, dueDate?: string) {
+  const supabase = createClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  // Generate document number
+  const docNumber = `${type.toUpperCase().substring(0, 3)}-${Date.now().toString().slice(-6)}`
+
+  const { data: document, error } = await supabase
+    .from('workspace_documents')
+    .insert({
+      workspace_id: workspaceId,
+      type,
+      title,
+      content,
+      document_number: docNumber,
+      amount,
+      due_date: dueDate,
+      created_by: user.id,
+      status: 'draft'
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating document:', error)
+    throw new Error('Failed to create document')
+  }
+
+  // Log activity
+  await supabase
+    .from('activity_log')
+    .insert({
+      workspace_id: workspaceId,
+      user_id: user.id,
+      action: `created ${type}: ${title}`,
+      entity_type: 'document',
+      entity_id: document.id
+    })
+
+  revalidatePath(`/workspace/${workspaceId}`)
+  return document
+}
+
+export async function sendDocument(documentId: string) {
+  const supabase = createClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data: document } = await supabase
+    .from('workspace_documents')
+    .select('*, workspaces!inner(client_id, name)')
+    .eq('id', documentId)
+    .single()
+
+  if (!document) {
+    throw new Error('Document not found')
+  }
+
+  const { error } = await supabase
+    .from('workspace_documents')
+    .update({ 
+      status: 'sent',
+      sent_at: new Date().toISOString()
+    })
+    .eq('id', documentId)
+
+  if (error) {
+    console.error('Error sending document:', error)
+    throw new Error('Failed to send document')
+  }
+
+  // Notify client
+  await supabase
+    .from('notifications')
+    .insert({
+      user_id: document.workspaces.client_id,
+      type: 'document_sent',
+      title: `New ${document.type} Received`,
+      body: `${document.title} has been sent to you.`,
+      data: { document_id: documentId, workspace_id: document.workspace_id }
+    })
+
+  // Log activity
+  await supabase
+    .from('activity_log')
+    .insert({
+      workspace_id: document.workspace_id,
+      user_id: user.id,
+      action: `sent ${document.type}: ${document.title}`,
+      entity_type: 'document',
+      entity_id: documentId
+    })
+
+  revalidatePath(`/workspace/${document.workspace_id}`)
+}
+
+export async function deleteDocument(documentId: string, workspaceId: string) {
+  const supabase = createClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { error } = await supabase
+    .from('workspace_documents')
+    .delete()
+    .eq('id', documentId)
+
+  if (error) {
+    console.error('Error deleting document:', error)
+    throw new Error('Failed to delete document')
+  }
+
+  revalidatePath(`/workspace/${workspaceId}`)
+}

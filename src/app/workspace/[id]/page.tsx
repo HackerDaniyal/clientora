@@ -75,6 +75,13 @@ export default async function WorkspacePage({ params }: { params: { id: string }
     .order("created_at", { ascending: false })
     .limit(50);
 
+  // Fetch documents
+  const { data: documents } = await supabase
+    .from("workspace_documents")
+    .select('*')
+    .eq("workspace_id", params.id)
+    .order("created_at", { ascending: false });
+
   // Determine user role in workspace
   const isFreelancer = workspace.freelancer_id === user.id;
   const memberRole = isFreelancer ? "editor" : "viewer";
@@ -86,6 +93,7 @@ export default async function WorkspacePage({ params }: { params: { id: string }
       messages={messages || []}
       members={members || []}
       activityLog={activityLog || []}
+      documents={documents || []}
       userRole={memberRole}
       workspaceId={params.id}
     />
