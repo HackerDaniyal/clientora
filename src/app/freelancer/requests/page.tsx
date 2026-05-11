@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { IconInbox, IconCheck, IconX, IconEye, IconAlertCircle } from "@tabler/icons-react";
 import { createClient } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 import { acceptRequest, rejectRequest } from "./actions";
 
 interface ProjectRequest {
@@ -27,6 +28,7 @@ export default function RequestsPage() {
   const [actionLoading, setActionLoading] = useState(false);
 
   const supabase = createClient();
+  const router = useRouter();
 
   useEffect(() => {
     fetchRequests();
@@ -76,23 +78,16 @@ export default function RequestsPage() {
   const handleAccept = async (requestId: string) => {
     setActionLoading(true);
     try {
-      // Use debug endpoint to see exact error
-      const response = await fetch('/api/debug/accept', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestId })
-      });
-      
-      const result = await response.json();
+      const result = await acceptRequest(requestId);
       console.log('Accept result:', result);
       
-      if (!response.ok) {
-        alert(`Error: ${result.error}\nStep: ${result.step}\nCode: ${result.code || 'N/A'}`);
-      } else {
-        alert('Project accepted! Workspace created.');
-        await fetchRequests();
-        setSelectedRequest(null);
-      }
+      // Force page refresh to show updated data
+      router.refresh();
+      
+      // Also fetch fresh data
+      await fetchRequests();
+      setSelectedRequest(null);
+      alert('Project accepted! Workspace created successfully.');
     } catch (error: any) {
       console.error('Accept error:', error);
       alert('Failed to accept request: ' + (error.message || 'Unknown error'));
