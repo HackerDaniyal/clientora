@@ -21,13 +21,24 @@ export async function login(formData: FormData) {
   }
 
   // Fetch role to redirect correctly
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', data.user.id)
     .single()
 
-  const role = profile?.role || 'freelancer'
+  if (profileError || !profile) {
+    console.error('Profile fetch error:', profileError)
+    // If profile doesn't exist, redirect to signup or default to freelancer
+    return redirect('/auth/login?error=Profile not found. Please contact support.')
+  }
+
+  const role = profile.role
+
+  if (!role) {
+    console.error('Role is undefined for user:', data.user.id)
+    return redirect('/auth/login?error=User role not configured properly.')
+  }
 
   revalidatePath('/', 'layout')
   

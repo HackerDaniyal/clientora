@@ -15,7 +15,8 @@ import {
   IconFileText,
   IconChevronDown,
   IconSparkles,
-  IconLink
+  IconLink,
+  IconInbox
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,7 @@ interface NavItem {
 const navItems: Record<"freelancer" | "client" | "admin", NavItem[]> = {
   freelancer: [
     { label: "Dashboard", href: "/freelancer/dashboard", icon: IconLayoutDashboard },
+    { label: "Requests", href: "/freelancer/requests", icon: IconInbox, badge: 0 },
     { label: "Referrals", href: "/freelancer/referrals", icon: IconLink },
     { label: "Clients", href: "/freelancer/clients", icon: IconUsers, hasSubmenu: true },
     { label: "Workspaces", href: "/freelancer/workspaces", icon: IconBriefcase },
