@@ -1,12 +1,41 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
-  // Update the session
-  const response = await updateSession(request)
-  
-  const supabase = createClient()
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
+
+  // Create Supabase client correctly for middleware
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({ name, value, ...options })
+          response = NextResponse.next({
+            request: { headers: request.headers },
+          })
+          response.cookies.set({ name, value, ...options })
+        },
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({ name, value: '', ...options })
+          response = NextResponse.next({
+            request: { headers: request.headers },
+          })
+          response.cookies.set({ name, value: '', ...options })
+        },
+      },
+    }
+  )
+
+  // Get user from session
   const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
@@ -25,37 +54,32 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // If user is authenticated and tries to access auth pages, redirect to their dashboard
-  if (user && isPublicRoute && pathname !== '/auth/callback') {
+  // If user is authenticated, check role for redirects
+  if (user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
 
-    const role = profile?.role || 'freelancer'
-    return NextResponse.redirect(new URL(`/${role}/dashboard`, request.url))
-  }
+    const userRole = profile?.role || 'freelancer'
 
-  // Role-based route protection
-  if (user && isProtectedRoute) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    const userRole = profile?.role
-
-    // Redirect to correct dashboard if accessing wrong role's route
-    if (pathname.startsWith('/freelancer') && userRole !== 'freelancer') {
+    // Redirect authenticated users away from auth pages
+    if (isPublicRoute && pathname !== '/auth/callback') {
       return NextResponse.redirect(new URL(`/${userRole}/dashboard`, request.url))
     }
-    if (pathname.startsWith('/client') && userRole !== 'client') {
-      return NextResponse.redirect(new URL(`/${userRole}/dashboard`, request.url))
-    }
-    if (pathname.startsWith('/admin') && userRole !== 'admin') {
-      return NextResponse.redirect(new URL(`/${userRole}/dashboard`, request.url))
+
+    // Role-based route protection
+    if (isProtectedRoute) {
+      if (pathname.startsWith('/freelancer') && userRole !== 'freelancer') {
+        return NextResponse.redirect(new URL(`/${userRole}/dashboard`, request.url))
+      }
+      if (pathname.startsWith('/client') && userRole !== 'client') {
+        return NextResponse.redirect(new URL(`/${userRole}/dashboard`, request.url))
+      }
+      if (pathname.startsWith('/admin') && userRole !== 'admin') {
+        return NextResponse.redirect(new URL(`/${userRole}/dashboard`, request.url))
+      }
     }
   }
 
