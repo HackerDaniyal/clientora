@@ -438,16 +438,18 @@ export default function PipelineBoard({ workspaces }: { workspaces: PipelineWork
             role="switch"
             aria-checked={hideEmpty}
             onClick={() => setHideEmpty((v) => !v)}
-            className="inline-flex items-center gap-2 text-[12px] text-text-secondary hover:text-brand-dark shrink-0"
+            className="inline-flex items-center gap-2 text-[12px] text-text-secondary hover:text-brand-dark shrink-0 select-none"
           >
+            {/* Track — overflow-hidden clips the knob so it can never escape */}
             <span
-              className={`relative h-5 w-9 shrink-0 rounded-pill transition-colors duration-200 ${
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out overflow-hidden ${
                 hideEmpty ? "bg-brand-mid" : "bg-gray-300"
               }`}
             >
+              {/* Knob — positioned with left so it's always inside the track */}
               <span
-                className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
-                  hideEmpty ? "translate-x-[18px]" : "translate-x-[2px]"
+                className={`absolute top-[2px] h-4 w-4 rounded-full bg-white shadow-sm transition-all duration-200 ease-in-out ${
+                  hideEmpty ? "left-[18px]" : "left-[2px]"
                 }`}
               />
             </span>
