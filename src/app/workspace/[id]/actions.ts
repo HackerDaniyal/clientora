@@ -131,6 +131,61 @@ export async function sendMessage(workspaceId: string, content: string, fileUrl?
     throw new Error('Failed to send message')
   }
 
+  // --- Create chat notifications for all other workspace participants ---
+  // 1. Get workspace owners
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('freelancer_id, client_id, name')
+    .eq('id', workspaceId)
+    .single()
+
+  // 2. Get workspace members
+  const { data: members } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('workspace_id', workspaceId)
+
+  // 3. Collect all participant IDs (excluding the sender)
+  const participantIds = new Set<string>()
+  if (workspace?.freelancer_id) participantIds.add(workspace.freelancer_id)
+  if (workspace?.client_id) participantIds.add(workspace.client_id)
+  members?.forEach((m) => participantIds.add(m.user_id))
+  participantIds.delete(user.id) // don't notify the sender
+
+  // 4. Get sender's name for the notification title
+  const { data: senderProfile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user.id)
+    .single()
+
+  const senderName = senderProfile?.full_name ?? 'Someone'
+  const truncatedContent = content.length > 80 ? content.slice(0, 80) + '…' : content
+
+  // 5. Insert a notification for each participant
+  if (participantIds.size > 0) {
+    const notificationRows = Array.from(participantIds).map((userId) => ({
+      user_id: userId,
+      type: 'chat_message',
+      title: `New message from ${senderName}`,
+      body: truncatedContent,
+      data: {
+        workspace_id: workspaceId,
+        sender_id: user.id,
+        sender_name: senderName,
+      },
+    }))
+
+    const { error: notifError } = await supabase
+      .from('notifications')
+      .insert(notificationRows)
+
+    if (notifError) {
+      console.error('Error creating chat notifications:', notifError)
+      // Don't throw — message was sent successfully, notification failure is non-critical
+    }
+  }
+
   revalidatePath(`/workspace/${workspaceId}`)
 }
 

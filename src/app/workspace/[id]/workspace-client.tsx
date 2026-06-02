@@ -13,7 +13,6 @@ import {
   IconTrash,
   IconCheck,
   IconSend,
-  IconPaperclip,
   IconDownload,
   IconClock,
   IconChartBar,
@@ -21,8 +20,13 @@ import {
 } from "@tabler/icons-react";
 import { createClient } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createTask, toggleTask, inviteMember, removeMember, logActivity, createDocument, sendDocument, deleteDocument } from "./actions";
+import { createTask, toggleTask, inviteMember, removeMember, createDocument, sendDocument, deleteDocument } from "./actions";
 import WorkspaceChat, { type ChatMessage } from "@/components/workspace/WorkspaceChat";
+import DocumentEditor from "@/components/documents/DocumentEditor";
+import type { DocumentType } from "@/components/documents/types";
+import ProposalTemplate from "@/components/documents/ProposalTemplate";
+import InvoiceTemplate from "@/components/documents/InvoiceTemplate";
+import ContractTemplate from "@/components/documents/ContractTemplate";
 
 interface WorkspaceClientProps {
   workspace: any;
@@ -50,7 +54,6 @@ export default function WorkspaceClient({
   userRole,
   workspaceId,
   documents: initialDocuments = [],
-  currentUserId,
   accountRole,
   canCreateTasks,
   canToggleTasks,
@@ -73,13 +76,9 @@ export default function WorkspaceClient({
   const [newTaskPriority, setNewTaskPriority] = useState("medium");
   const [inviteEmail, setInviteEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [showDocEditor, setShowDocEditor] = useState(false);
+  const [editorDocType, setEditorDocType] = useState<DocumentType>('proposal');
   const [viewingDocument, setViewingDocument] = useState<any | null>(null);
-  const [selectedDocType, setSelectedDocType] = useState<'proposal' | 'invoice' | 'contract'>('proposal');
-  const [docTitle, setDocTitle] = useState("");
-  const [docAmount, setDocAmount] = useState("");
-  const [docDueDate, setDocDueDate] = useState("");
-  const [docDescription, setDocDescription] = useState("");
 
   type AssetFile = { name: string; url: string; path?: string };
   const projectAssets: { label: string; files: AssetFile[] }[] = (() => {
@@ -149,7 +148,7 @@ export default function WorkspaceClient({
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'activity_log', filter: `workspace_id=eq.${workspaceId}` },
-        (payload) => {
+        () => {
           fetchActivityLog();
         }
       )
@@ -187,7 +186,7 @@ export default function WorkspaceClient({
       await createTask(workspaceId, newTaskTitle, newTaskPriority);
       setNewTaskTitle("");
       await fetchTasks();
-    } catch (error) {
+    } catch {
       alert("Failed to create task");
     }
     setLoading(false);
@@ -217,30 +216,6 @@ export default function WorkspaceClient({
       .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false });
     if (data) setDocuments(data);
-  };
-
-  const handleCreateDocument = async () => {
-    if (!docTitle.trim()) return;
-    setLoading(true);
-    try {
-      await createDocument(
-        workspaceId,
-        selectedDocType,
-        docTitle,
-        { description: docDescription },
-        docAmount ? parseFloat(docAmount) : undefined,
-        docDueDate || undefined
-      );
-      setShowDocumentModal(false);
-      setDocTitle("");
-      setDocAmount("");
-      setDocDueDate("");
-      setDocDescription("");
-      await fetchDocuments();
-    } catch {
-      alert("Failed to create document");
-    }
-    setLoading(false);
   };
 
   const handleInviteMember = async () => {
@@ -581,45 +556,36 @@ export default function WorkspaceClient({
             {userRole === "editor" && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <button
-                  onClick={() => {
-                    setSelectedDocType('proposal');
-                    setShowDocumentModal(true);
-                  }}
+                  onClick={() => { setEditorDocType('proposal'); setShowDocEditor(true); }}
                   className="card bg-white p-6 hover:shadow-md transition-all text-left border-2 border-transparent hover:border-brand-accent"
                 >
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
                     <IconFileText size={24} className="text-blue-600" />
                   </div>
                   <h4 className="text-[15px] font-medium text-brand-dark mb-1">New Proposal</h4>
-                  <p className="text-[12px] text-text-secondary">Create project proposal</p>
+                  <p className="text-[12px] text-text-secondary">Professional proposal with template</p>
                 </button>
 
                 <button
-                  onClick={() => {
-                    setSelectedDocType('invoice');
-                    setShowDocumentModal(true);
-                  }}
+                  onClick={() => { setEditorDocType('invoice'); setShowDocEditor(true); }}
                   className="card bg-white p-6 hover:shadow-md transition-all text-left border-2 border-transparent hover:border-brand-accent"
                 >
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-3">
                     <IconFileText size={24} className="text-green-600" />
                   </div>
                   <h4 className="text-[15px] font-medium text-brand-dark mb-1">New Invoice</h4>
-                  <p className="text-[12px] text-text-secondary">Bill for services</p>
+                  <p className="text-[12px] text-text-secondary">Professional invoice with template</p>
                 </button>
 
                 <button
-                  onClick={() => {
-                    setSelectedDocType('contract');
-                    setShowDocumentModal(true);
-                  }}
+                  onClick={() => { setEditorDocType('contract'); setShowDocEditor(true); }}
                   className="card bg-white p-6 hover:shadow-md transition-all text-left border-2 border-transparent hover:border-brand-accent"
                 >
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-3">
                     <IconFileText size={24} className="text-purple-600" />
                   </div>
                   <h4 className="text-[15px] font-medium text-brand-dark mb-1">New Contract</h4>
-                  <p className="text-[12px] text-text-secondary">Create agreement</p>
+                  <p className="text-[12px] text-text-secondary">Professional agreement with template</p>
                 </button>
               </div>
             )}
@@ -783,114 +749,73 @@ export default function WorkspaceClient({
         )}
       </div>
 
-      {/* Create Document Modal */}
-      {showDocumentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-brand-dark mb-4 capitalize">
-              New {selectedDocType}
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="input-label block mb-1 text-[12px] text-text-secondary">Title</label>
-                <input
-                  type="text"
-                  value={docTitle}
-                  onChange={(e) => setDocTitle(e.target.value)}
-                  className="w-full bg-brand-surface border border-brand-light rounded-lg px-4 py-2.5 outline-none focus:border-brand-accent"
-                  placeholder={`${selectedDocType} title`}
-                />
-              </div>
-              {selectedDocType === "invoice" && (
-                <>
-                  <div>
-                    <label className="block mb-1 text-[12px] text-text-secondary">Amount ($)</label>
-                    <input
-                      type="number"
-                      value={docAmount}
-                      onChange={(e) => setDocAmount(e.target.value)}
-                      className="w-full bg-brand-surface border border-brand-light rounded-lg px-4 py-2.5 outline-none focus:border-brand-accent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block mb-1 text-[12px] text-text-secondary">Due date</label>
-                    <input
-                      type="date"
-                      value={docDueDate}
-                      onChange={(e) => setDocDueDate(e.target.value)}
-                      className="w-full bg-brand-surface border border-brand-light rounded-lg px-4 py-2.5 outline-none focus:border-brand-accent"
-                    />
-                  </div>
-                </>
-              )}
-              <div>
-                <label className="block mb-1 text-[12px] text-text-secondary">Description</label>
-                <textarea
-                  value={docDescription}
-                  onChange={(e) => setDocDescription(e.target.value)}
-                  rows={3}
-                  className="w-full bg-brand-surface border border-brand-light rounded-lg px-4 py-2.5 outline-none focus:border-brand-accent resize-none"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowDocumentModal(false)}
-                className="flex-1 pill-btn-outline"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateDocument}
-                disabled={loading || !docTitle.trim()}
-                className="flex-1 pill-btn bg-brand-accent text-white disabled:opacity-50"
-              >
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* View Document Modal */}
+      {/* View Document Modal — Renders Template with Saved Data */}
       {viewingDocument && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-start justify-between mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white z-10 flex items-center justify-between px-6 py-3 border-b border-gray-200">
               <div>
-                <h3 className="text-lg font-semibold text-brand-dark">{viewingDocument.title}</h3>
-                <p className="text-[12px] text-text-tertiary capitalize">
+                <h3 className="text-[15px] font-semibold text-brand-dark">{viewingDocument.title}</h3>
+                <p className="text-[11px] text-text-tertiary capitalize">
                   {viewingDocument.type} · {viewingDocument.document_number} · {viewingDocument.status}
                 </p>
               </div>
               <button
                 onClick={() => setViewingDocument(null)}
-                className="text-text-tertiary hover:text-brand-dark text-xl leading-none"
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition"
               >
-                ×
+                <span className="text-text-tertiary text-lg leading-none">&times;</span>
               </button>
             </div>
-            {viewingDocument.amount != null && (
-              <p className="text-2xl font-semibold text-brand-dark mb-3">${viewingDocument.amount}</p>
-            )}
-            {viewingDocument.content?.description && (
-              <p className="text-[14px] text-text-secondary whitespace-pre-wrap">
-                {viewingDocument.content.description}
-              </p>
-            )}
-            {viewingDocument.pdf_url && (
-              <a
-                href={viewingDocument.pdf_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pill-btn inline-flex items-center gap-2 mt-4"
-              >
-                <IconDownload size={16} />
-                Download PDF
-              </a>
-            )}
+            <div className="p-6">
+              {viewingDocument.type === 'proposal' && viewingDocument.content?.companyName && (
+                <ProposalTemplate data={viewingDocument.content} />
+              )}
+              {viewingDocument.type === 'invoice' && viewingDocument.content?.invoiceNumber && (
+                <InvoiceTemplate data={viewingDocument.content} />
+              )}
+              {viewingDocument.type === 'contract' && viewingDocument.content?.projectScope && (
+                <ContractTemplate data={viewingDocument.content} />
+              )}
+              {(!viewingDocument.content?.companyName && !viewingDocument.content?.invoiceNumber && !viewingDocument.content?.projectScope) && (
+                <div className="text-center py-12">
+                  <p className="text-text-secondary mb-2">This document was created with the old format.</p>
+                  {viewingDocument.content?.description && (
+                    <p className="text-[14px] text-text-secondary whitespace-pre-wrap max-w-lg mx-auto">
+                      {viewingDocument.content.description}
+                    </p>
+                  )}
+                  {viewingDocument.amount != null && (
+                    <p className="text-2xl font-semibold text-brand-dark mt-4">${viewingDocument.amount}</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Document Editor Modal */}
+      {showDocEditor && (
+        <DocumentEditor
+          type={editorDocType}
+          workspaceName={workspace.name}
+          clientName={workspace.client?.full_name}
+          freelancerName={workspace.freelancer?.full_name}
+          freelancerEmail={undefined}
+          onSave={async (docType, title, content) => {
+            await createDocument(
+              workspaceId,
+              docType,
+              title,
+              content,
+              docType === 'invoice' ? (content as any).totalAmount : undefined,
+              docType === 'invoice' ? (content as any).dueDate : undefined
+            );
+            await fetchDocuments();
+          }}
+          onClose={() => setShowDocEditor(false)}
+        />
       )}
     </div>
   );
