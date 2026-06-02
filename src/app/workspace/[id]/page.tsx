@@ -76,10 +76,30 @@ export default async function WorkspacePage({ params }: { params: { id: string }
     .eq("workspace_id", params.id)
     .order("created_at", { ascending: false });
 
-  const { data: messages } = await supabase
+  const messagesSelect = `
+      id,
+      workspace_id,
+      sender_id,
+      content,
+      created_at,
+      file_url,
+      file_name,
+      sender:profiles!messages_sender_id_fkey(full_name, avatar_url),
+      reads:message_reads(user_id, delivered_at, read_at)
+    `;
+
+  let messagesResult = await supabase
     .from("messages")
-    .select(
-      `
+    .select(messagesSelect)
+    .eq("workspace_id", params.id)
+    .order("created_at", { ascending: true })
+    .limit(100);
+
+  if (messagesResult.error?.message?.includes("message_reads")) {
+    messagesResult = await supabase
+      .from("messages")
+      .select(
+        `
       id,
       workspace_id,
       sender_id,
@@ -89,10 +109,13 @@ export default async function WorkspacePage({ params }: { params: { id: string }
       file_name,
       sender:profiles!messages_sender_id_fkey(full_name, avatar_url)
     `
-    )
-    .eq("workspace_id", params.id)
-    .order("created_at", { ascending: true })
-    .limit(100);
+      )
+      .eq("workspace_id", params.id)
+      .order("created_at", { ascending: true })
+      .limit(100);
+  }
+
+  const messages = messagesResult.data;
 
   const { data: members } = await supabase
     .from("workspace_members")

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { 
   IconLayoutDashboard, 
   IconFiles, 
@@ -116,6 +116,17 @@ export default function WorkspaceClient({
     return items;
   })();
   const allAssetFiles = projectAssets.flatMap((g) => g.files);
+
+  const participantIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (workspace.freelancer_id) ids.add(workspace.freelancer_id);
+    if (workspace.client_id) ids.add(workspace.client_id);
+    for (const m of members ?? []) {
+      const uid = m.user_id as string | undefined;
+      if (uid) ids.add(uid);
+    }
+    return Array.from(ids);
+  }, [workspace.freelancer_id, workspace.client_id, members]);
 
   // Realtime subscriptions
   useEffect(() => {
@@ -556,6 +567,7 @@ export default function WorkspaceClient({
           <WorkspaceChat
             workspaceId={workspaceId}
             initialMessages={messages}
+            participantIds={participantIds}
             canSend={userRole === "editor"}
             onMessagesUpdated={setMessages}
           />
