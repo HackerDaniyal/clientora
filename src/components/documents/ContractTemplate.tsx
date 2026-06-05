@@ -3,6 +3,9 @@ import { fmt, type ContractData } from "./types";
 
 /** Professional Contract Template — renders as styled HTML for preview & PDF capture */
 export default function ContractTemplate({ data }: { data: ContractData }) {
+  const brand = data.brandColor || "#1a3d2b";
+  const clauseStyle: React.CSSProperties = { fontSize: 14, fontWeight: 700, marginBottom: 8, color: brand };
+
   return (
     <div
       style={{
@@ -17,10 +20,17 @@ export default function ContractTemplate({ data }: { data: ContractData }) {
         style={{
           padding: "48px 48px 32px",
           textAlign: "center",
-          borderBottom: "3px double #374151",
+          borderBottom: `3px double ${brand}`,
         }}
       >
-        <h1 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 4px", color: "#111827", letterSpacing: 2, textTransform: "uppercase" }}>
+        {/* Logo */}
+        {data.logoUrl && (
+          <div style={{ marginBottom: 16 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={data.logoUrl} alt="Logo" style={{ maxHeight: 50, maxWidth: 180, objectFit: "contain" }} />
+          </div>
+        )}
+        <h1 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 4px", color: brand, letterSpacing: 2, textTransform: "uppercase" }}>
           Service Agreement
         </h1>
         <p style={{ margin: 0, fontSize: 13, color: "#6b7280" }}>
@@ -58,7 +68,7 @@ export default function ContractTemplate({ data }: { data: ContractData }) {
 
         {/* ── 1. Project Scope ── */}
         <section style={{ marginBottom: 28 }}>
-          <h2 style={clauseHeading}>1. Project Scope</h2>
+          <h2 style={clauseStyle}>1. Project Scope</h2>
           <p style={{ margin: "0 0 12px", whiteSpace: "pre-wrap" }}>{data.projectScope}</p>
           {data.deliverables.length > 0 && (
             <>
@@ -74,7 +84,7 @@ export default function ContractTemplate({ data }: { data: ContractData }) {
 
         {/* ── 2. Timeline ── */}
         <section style={{ marginBottom: 28 }}>
-          <h2 style={clauseHeading}>2. Timeline</h2>
+          <h2 style={clauseStyle}>2. Timeline</h2>
           <p style={{ margin: 0 }}>
             The project shall commence on{" "}
             <strong>{new Date(data.effectiveDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</strong>{" "}
@@ -86,7 +96,7 @@ export default function ContractTemplate({ data }: { data: ContractData }) {
 
         {/* ── 3. Compensation ── */}
         <section style={{ marginBottom: 28 }}>
-          <h2 style={clauseHeading}>3. Compensation</h2>
+          <h2 style={clauseStyle}>3. Compensation</h2>
           <p style={{ margin: "0 0 12px" }}>
             The Client agrees to pay the Service Provider a total of{" "}
             <strong>{fmt(data.totalAmount)}</strong> for the services described above.
@@ -121,7 +131,7 @@ export default function ContractTemplate({ data }: { data: ContractData }) {
 
         {/* ── 4. Revisions ── */}
         <section style={{ marginBottom: 28 }}>
-          <h2 style={clauseHeading}>4. Revisions</h2>
+          <h2 style={clauseStyle}>4. Revisions</h2>
           <p style={{ margin: 0 }}>
             The Client is entitled to <strong>{data.revisionLimit} round{data.revisionLimit !== 1 ? "s" : ""}</strong> of revisions
             per deliverable at no additional cost. Additional revisions will be billed at the Service Provider&apos;s
@@ -131,25 +141,25 @@ export default function ContractTemplate({ data }: { data: ContractData }) {
 
         {/* ── 5. Confidentiality ── */}
         <section style={{ marginBottom: 28 }}>
-          <h2 style={clauseHeading}>5. Confidentiality</h2>
+          <h2 style={clauseStyle}>5. Confidentiality</h2>
           <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{data.confidentialityClause}</p>
         </section>
 
         {/* ── 6. Termination ── */}
         <section style={{ marginBottom: 28 }}>
-          <h2 style={clauseHeading}>6. Termination</h2>
+          <h2 style={clauseStyle}>6. Termination</h2>
           <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{data.terminationClause}</p>
         </section>
 
         {/* ── 7. Limitation of Liability ── */}
         <section style={{ marginBottom: 28 }}>
-          <h2 style={clauseHeading}>7. Limitation of Liability</h2>
+          <h2 style={clauseStyle}>7. Limitation of Liability</h2>
           <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{data.liabilityClause}</p>
         </section>
 
         {/* ── 8. Governing Law ── */}
         <section style={{ marginBottom: 28 }}>
-          <h2 style={clauseHeading}>8. Governing Law</h2>
+          <h2 style={clauseStyle}>8. Governing Law</h2>
           <p style={{ margin: 0 }}>
             This Agreement shall be governed by and construed in accordance with the laws of{" "}
             <strong>{data.governingLaw}</strong>.
@@ -159,7 +169,7 @@ export default function ContractTemplate({ data }: { data: ContractData }) {
         {/* ── 9. Additional Terms ── */}
         {data.additionalTerms && (
           <section style={{ marginBottom: 28 }}>
-            <h2 style={clauseHeading}>9. Additional Terms</h2>
+            <h2 style={clauseStyle}>9. Additional Terms</h2>
             <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{data.additionalTerms}</p>
           </section>
         )}
@@ -204,13 +214,6 @@ export default function ContractTemplate({ data }: { data: ContractData }) {
 }
 
 // ── Style constants ──
-const clauseHeading: React.CSSProperties = {
-  fontSize: 14,
-  fontWeight: 700,
-  marginBottom: 8,
-  color: "#111827",
-};
-
 const cellStyle: React.CSSProperties = {
   padding: "10px 12px",
   borderBottom: "1px solid #e5e7eb",

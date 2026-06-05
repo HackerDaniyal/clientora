@@ -6,32 +6,31 @@ export default function ProposalTemplate({ data }: { data: ProposalData }) {
   const subtotal = calcSubtotal(data.pricing);
   const tax = calcTax(subtotal, data.taxRate);
   const total = subtotal + tax;
+  const brand = data.brandColor || "#1e3a5f";
+  const headingStyle: React.CSSProperties = {
+    fontSize: 16, fontWeight: 700, color: brand,
+    marginBottom: 12, paddingBottom: 6, borderBottom: `2px solid ${brand}`,
+  };
 
   return (
     <div
       style={{
         fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-        color: "#1a1a1a",
-        lineHeight: 1.6,
-        fontSize: 13,
+        color: "#1a1a1a", lineHeight: 1.6, fontSize: 13,
       }}
     >
       {/* ── Cover / Header ── */}
-      <div
-        style={{
-          background: "linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%)",
-          color: "#ffffff",
-          padding: "48px 40px",
-          marginBottom: 0,
-        }}
-      >
-        <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", opacity: 0.8, marginBottom: 8 }}>
-          Project Proposal
-        </div>
+      <div style={{ background: `linear-gradient(135deg, ${brand} 0%, ${brand}cc 100%)`, color: "#ffffff", padding: "48px 40px", marginBottom: 0 }}>
+        {/* Logo */}
+        {data.logoUrl && (
+          <div style={{ marginBottom: 20 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={data.logoUrl} alt="Logo" style={{ maxHeight: 60, maxWidth: 200, objectFit: "contain" }} />
+          </div>
+        )}
+        <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", opacity: 0.8, marginBottom: 8 }}>Project Proposal</div>
         <h1 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 6px", lineHeight: 1.2 }}>{data.projectName}</h1>
-        <p style={{ fontSize: 14, margin: "0 0 24px", opacity: 0.85 }}>
-          Prepared for {data.clientName}
-        </p>
+        <p style={{ fontSize: 14, margin: "0 0 24px", opacity: 0.85 }}>Prepared for {data.clientName}</p>
         <div style={{ display: "flex", gap: 32, fontSize: 12, opacity: 0.9 }}>
           <div>
             <div style={{ fontWeight: 600, marginBottom: 2 }}>{data.companyName}</div>
@@ -50,21 +49,18 @@ export default function ProposalTemplate({ data }: { data: ProposalData }) {
 
       {/* ── Body ── */}
       <div style={{ padding: "40px 40px" }}>
-        {/* Introduction */}
         <section style={{ marginBottom: 32 }}>
-          <h2 style={sectionHeading}>Introduction</h2>
+          <h2 style={headingStyle}>Introduction</h2>
           <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{data.introduction}</p>
         </section>
 
-        {/* Project Understanding */}
         <section style={{ marginBottom: 32 }}>
-          <h2 style={sectionHeading}>Project Understanding</h2>
+          <h2 style={headingStyle}>Project Understanding</h2>
           <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{data.projectUnderstanding}</p>
         </section>
 
-        {/* Scope of Work */}
         <section style={{ marginBottom: 32 }}>
-          <h2 style={sectionHeading}>Scope of Work</h2>
+          <h2 style={headingStyle}>Scope of Work</h2>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
             {data.scopeItems.map((item, i) => (
               <li key={i} style={{ marginBottom: 6 }}>{item}</li>
@@ -72,9 +68,8 @@ export default function ProposalTemplate({ data }: { data: ProposalData }) {
           </ul>
         </section>
 
-        {/* Timeline */}
         <section style={{ marginBottom: 32 }}>
-          <h2 style={sectionHeading}>Project Timeline</h2>
+          <h2 style={headingStyle}>Project Timeline</h2>
           <table style={tableStyle}>
             <thead>
               <tr>
@@ -95,9 +90,8 @@ export default function ProposalTemplate({ data }: { data: ProposalData }) {
           </table>
         </section>
 
-        {/* Investment */}
         <section style={{ marginBottom: 32 }}>
-          <h2 style={sectionHeading}>Investment</h2>
+          <h2 style={headingStyle}>Investment</h2>
           <table style={tableStyle}>
             <thead>
               <tr>
@@ -136,25 +130,21 @@ export default function ProposalTemplate({ data }: { data: ProposalData }) {
           </table>
         </section>
 
-        {/* Terms */}
         <section style={{ marginBottom: 32 }}>
-          <h2 style={sectionHeading}>Terms &amp; Conditions</h2>
+          <h2 style={headingStyle}>Terms &amp; Conditions</h2>
           <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{data.terms}</p>
         </section>
 
         {data.notes && (
           <section style={{ marginBottom: 32 }}>
-            <h2 style={sectionHeading}>Additional Notes</h2>
+            <h2 style={headingStyle}>Additional Notes</h2>
             <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{data.notes}</p>
           </section>
         )}
 
-        {/* Acceptance */}
         <section style={{ marginBottom: 0, borderTop: "1px solid #e5e7eb", paddingTop: 32 }}>
-          <h2 style={sectionHeading}>Acceptance</h2>
-          <p style={{ marginBottom: 24 }}>
-            By signing below, both parties agree to the terms outlined in this proposal.
-          </p>
+          <h2 style={headingStyle}>Acceptance</h2>
+          <p style={{ marginBottom: 24 }}>By signing below, both parties agree to the terms outlined in this proposal.</p>
           <div style={{ display: "flex", gap: 48 }}>
             <div style={{ flex: 1 }}>
               <div style={{ borderBottom: "1px solid #9ca3af", marginBottom: 6, height: 32 }}></div>
@@ -171,15 +161,7 @@ export default function ProposalTemplate({ data }: { data: ProposalData }) {
       </div>
 
       {/* Footer */}
-      <div
-        style={{
-          borderTop: "1px solid #e5e7eb",
-          padding: "16px 40px",
-          fontSize: 11,
-          color: "#9ca3af",
-          textAlign: "center",
-        }}
-      >
+      <div style={{ borderTop: "1px solid #e5e7eb", padding: "16px 40px", fontSize: 11, color: "#9ca3af", textAlign: "center" }}>
         {data.companyName} · {data.freelancerEmail}
         {data.freelancerWebsite ? ` · ${data.freelancerWebsite}` : ""}
       </div>
@@ -188,15 +170,6 @@ export default function ProposalTemplate({ data }: { data: ProposalData }) {
 }
 
 // ── Shared style constants ──
-const sectionHeading: React.CSSProperties = {
-  fontSize: 16,
-  fontWeight: 700,
-  color: "#1e3a5f",
-  marginBottom: 12,
-  paddingBottom: 6,
-  borderBottom: "2px solid #1e3a5f",
-};
-
 const tableStyle: React.CSSProperties = {
   width: "100%",
   borderCollapse: "collapse",

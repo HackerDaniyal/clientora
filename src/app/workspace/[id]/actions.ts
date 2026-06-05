@@ -395,3 +395,160 @@ export async function deleteDocument(documentId: string, workspaceId: string) {
 
   revalidatePath(`/workspace/${workspaceId}`)
 }
+
+export async function updateWorkspaceAssets(workspaceId: string, assets: {
+  logo?: { name: string; url: string; path?: string } | null;
+  references?: { name: string; url: string; path?: string }[];
+  documents?: { name: string; url: string; path?: string }[];
+}) {
+  const supabase = createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  // Fetch current form_data
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('form_data')
+    .eq('id', workspaceId)
+    .single()
+
+  let formData: Record<string, unknown> = {}
+  if (workspace?.form_data) {
+    formData = typeof workspace.form_data === 'string'
+      ? JSON.parse(workspace.form_data as string)
+      : workspace.form_data as Record<string, unknown>
+  }
+
+  // Merge assets into form_data
+  const existingAssets = (formData.assets || {}) as Record<string, unknown>
+  formData.assets = { ...existingAssets, ...assets }
+
+  const { error } = await supabase
+    .from('workspaces')
+    .update({ form_data: formData })
+    .eq('id', workspaceId)
+
+  if (error) {
+    console.error('Error updating workspace assets:', error)
+    throw new Error('Failed to update assets')
+  }
+
+  await supabase
+    .from('activity_log')
+    .insert({
+      workspace_id: workspaceId,
+      user_id: user.id,
+      action: 'uploaded project assets',
+      entity_type: 'workspace',
+      entity_id: workspaceId
+    })
+
+  revalidatePath(`/workspace/${workspaceId}`)
+}
+
+export async function sendAssetsToFreelancer(workspaceId: string, assetsData: {
+  logo?: { name: string; url: string; path?: string } | null;
+  references?: { name: string; url: string; path?: string }[];
+  documents?: { name: string; url: string; path?: string }[];
+}) {
+  const supabase = createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  // Get workspace with freelancer info
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('freelancer_id, name, form_data')
+    .eq('id', workspaceId)
+    .single()
+
+  if (!workspace?.freelancer_id) {
+    throw new Error('No freelancer assigned to this workspace')
+  }
+
+  // Count assets from passed data
+  const fileCount = (assetsData.logo ? 1 : 0) +
+    (assetsData.references?.length || 0) +
+    (assetsData.documents?.length || 0)
+
+  if (fileCount === 0) {
+    throw new Error('No assets to send. Upload files first.')
+  }
+
+  // Merge assets into form_data and mark as sent
+  let formData: Record<string, unknown> = {}
+  if (workspace.form_data) {
+    formData = typeof workspace.form_data === 'string'
+      ? JSON.parse(workspace.form_data as string)
+      : workspace.form_data as Record<string, unknown>
+  }
+
+  const existingAssets = (formData.assets || {}) as Record<string, unknown>
+  formData.assets = { ...existingAssets, ...assetsData }
+  formData.assets_sent_at = new Date().toISOString()
+
+  const { error: updateError } = await supabase
+    .from('workspaces')
+    .update({ form_data: formData })
+    .eq('id', workspaceId)
+
+  if (updateError) {
+    console.error('Failed to update workspace form_data:', updateError)
+    throw new Error('Failed to save assets. Please try again.')
+  }
+
+  // Notify freelancer
+  await supabase
+    .from('notifications')
+    .insert({
+      user_id: workspace.freelancer_id,
+      type: 'assets_received',
+      title: 'New Project Assets Received',
+      body: `${fileCount} file${fileCount !== 1 ? 's' : ''} uploaded for ${workspace.name}. Check the Assets tab to download.`,
+      data: { workspace_id: workspaceId, file_count: fileCount }
+    })
+
+  // Log activity
+  await supabase
+    .from('activity_log')
+    .insert({
+      workspace_id: workspaceId,
+      user_id: user.id,
+      action: `sent ${fileCount} asset${fileCount !== 1 ? 's' : ''} to freelancer`,
+      entity_type: 'workspace',
+      entity_id: workspaceId
+    })
+
+  revalidatePath(`/workspace/${workspaceId}`)
+}
+
+export async function updateDocument(documentId: string, workspaceId: string, title: string, content: any, amount?: number, dueDate?: string) {
+  const supabase = createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { error } = await supabase
+    .from('workspace_documents')
+    .update({ title, content, amount, due_date: dueDate })
+    .eq('id', documentId)
+
+  if (error) {
+    console.error('Error updating document:', error)
+    throw new Error('Failed to update document')
+  }
+
+  await supabase
+    .from('activity_log')
+    .insert({
+      workspace_id: workspaceId,
+      user_id: user.id,
+      action: `updated document: ${title}`,
+      entity_type: 'document',
+      entity_id: documentId
+    })
+
+  revalidatePath(`/workspace/${workspaceId}`)
+}

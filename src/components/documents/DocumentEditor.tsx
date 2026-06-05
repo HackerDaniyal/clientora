@@ -31,45 +31,93 @@ import {
 } from "./types";
 import { exportPDF, exportProposalDOC, exportInvoiceDOC, exportContractDOC } from "@/lib/document-export";
 
+// ── Stable sub-components (defined OUTSIDE to preserve React identity across renders) ──
+const labelCls = "block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1";
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className={labelCls}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function Section({ id, title, children, openSections, toggleSection }: {
+  id: string; title: string; children: React.ReactNode;
+  openSections: Record<string, boolean>; toggleSection: (key: string) => void;
+}) {
+  return (
+    <div className="border-b border-gray-100">
+      <button
+        type="button"
+        onClick={() => toggleSection(id)}
+        className="w-full flex items-center justify-between px-4 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 transition"
+      >
+        {title}
+        {openSections[id] ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
+      </button>
+      {openSections[id] && <div className="px-4 pb-4 space-y-3">{children}</div>}
+    </div>
+  );
+}
+
 type Props = {
   type: DocumentType;
   workspaceName?: string;
   clientName?: string;
   freelancerName?: string;
   freelancerEmail?: string;
+  initialData?: Record<string, unknown> | null;
   onSave?: (docType: DocumentType, title: string, content: Record<string, unknown>) => Promise<void>;
   onClose: () => void;
 };
 
-export default function DocumentEditor({ type, workspaceName, clientName, freelancerName, freelancerEmail, onSave, onClose }: Props) {
+export default function DocumentEditor({ type, workspaceName, clientName, freelancerName, freelancerEmail, initialData, onSave, onClose }: Props) {
   // ── State ──
-  const [proposal, setProposal] = useState<ProposalData>(() => ({
-    ...defaultProposal,
-    projectName: workspaceName ?? defaultProposal.projectName,
-    clientName: clientName ?? defaultProposal.clientName,
-    freelancerName: freelancerName ?? defaultProposal.freelancerName,
-    freelancerEmail: freelancerEmail ?? defaultProposal.freelancerEmail,
-  }));
-  const [invoice, setInvoice] = useState<InvoiceData>(() => ({
-    ...defaultInvoice,
-    clientName: clientName ?? defaultInvoice.clientName,
-    freelancerName: freelancerName ?? defaultInvoice.freelancerName,
-    freelancerEmail: freelancerEmail ?? defaultInvoice.freelancerEmail,
-  }));
-  const [contract, setContract] = useState<ContractData>(() => ({
-    ...defaultContract,
-    projectName: workspaceName ?? defaultContract.projectName,
-    clientName: clientName ?? defaultContract.clientName,
-    freelancerName: freelancerName ?? defaultContract.freelancerName,
-    freelancerEmail: freelancerEmail ?? defaultContract.freelancerEmail,
-  }));
+  const [proposal, setProposal] = useState<ProposalData>(() => {
+    if (type === "proposal" && initialData) {
+      return { ...defaultProposal, ...(initialData as unknown as ProposalData) };
+    }
+    return {
+      ...defaultProposal,
+      projectName: workspaceName ?? defaultProposal.projectName,
+      clientName: clientName ?? defaultProposal.clientName,
+      freelancerName: freelancerName ?? defaultProposal.freelancerName,
+      freelancerEmail: freelancerEmail ?? defaultProposal.freelancerEmail,
+    };
+  });
+  const [invoice, setInvoice] = useState<InvoiceData>(() => {
+    if (type === "invoice" && initialData) {
+      return { ...defaultInvoice, ...(initialData as unknown as InvoiceData) };
+    }
+    return {
+      ...defaultInvoice,
+      clientName: clientName ?? defaultInvoice.clientName,
+      freelancerName: freelancerName ?? defaultInvoice.freelancerName,
+      freelancerEmail: freelancerEmail ?? defaultInvoice.freelancerEmail,
+    };
+  });
+  const [contract, setContract] = useState<ContractData>(() => {
+    if (type === "contract" && initialData) {
+      return { ...defaultContract, ...(initialData as unknown as ContractData) };
+    }
+    return {
+      ...defaultContract,
+      projectName: workspaceName ?? defaultContract.projectName,
+      clientName: clientName ?? defaultContract.clientName,
+      freelancerName: freelancerName ?? defaultContract.freelancerName,
+      freelancerEmail: freelancerEmail ?? defaultContract.freelancerEmail,
+    };
+  });
 
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ general: true, items: true, extras: false, clauses: false });
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ branding: true, general: true, items: true, extras: false, clauses: false });
   const previewRef = useRef<HTMLDivElement>(null);
 
-  const toggleSection = (key: string) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
+  const toggleSection = useCallback((key: string) => setOpenSections((p) => ({ ...p, [key]: !p[key] })), []);
+  const openSectionsRef = useRef(openSections);
+  openSectionsRef.current = openSections;
 
   // ── PDF / DOC Export ──
   const handleExportPDF = useCallback(async () => {
@@ -121,31 +169,15 @@ export default function DocumentEditor({ type, workspaceName, clientName, freela
     setSaving(false);
   }, [type, proposal, invoice, contract, onSave, onClose, saving]);
 
-  // ── Shared input helpers ──
+  // ── Shared input classes ──
   const inputCls = "w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-[13px] outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent/20 transition";
-  const labelCls = "block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1";
   const textareaCls = `${inputCls} resize-none`;
 
-  const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-    <div>
-      <label className={labelCls}>{label}</label>
-      {children}
-    </div>
-  );
-
-  const Section = ({ id, title, children }: { id: string; title: string; children: React.ReactNode }) => (
-    <div className="border-b border-gray-100">
-      <button
-        type="button"
-        onClick={() => toggleSection(id)}
-        className="w-full flex items-center justify-between px-4 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 transition"
-      >
-        {title}
-        {openSections[id] ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
-      </button>
-      {openSections[id] && <div className="px-4 pb-4 space-y-3">{children}</div>}
-    </div>
-  );
+  // ── Stable Section wrapper — never changes identity (uses ref for openSections) ──
+  const BoundSection = useCallback(({ id, title, children }: { id: string; title: string; children: React.ReactNode }) => (
+    <Section id={id} title={title} openSections={openSectionsRef.current} toggleSection={toggleSection}>{children}</Section>
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [toggleSection]);
 
   return (
     <div className="fixed inset-0 z-50 flex bg-black/50">
@@ -164,9 +196,9 @@ export default function DocumentEditor({ type, workspaceName, clientName, freela
 
         {/* Scrollable Form */}
         <div className="flex-1 overflow-y-auto">
-          {type === "proposal" && <ProposalFields data={proposal} setData={setProposal} Section={Section} Field={Field} inputCls={inputCls} textareaCls={textareaCls} />}
-          {type === "invoice" && <InvoiceFields data={invoice} setData={setInvoice} Section={Section} Field={Field} inputCls={inputCls} textareaCls={textareaCls} />}
-          {type === "contract" && <ContractFields data={contract} setData={setContract} Section={Section} Field={Field} inputCls={inputCls} textareaCls={textareaCls} />}
+          {type === "proposal" && <ProposalFields data={proposal} setData={setProposal} Section={BoundSection} inputCls={inputCls} textareaCls={textareaCls} />}
+          {type === "invoice" && <InvoiceFields data={invoice} setData={setInvoice} Section={BoundSection} inputCls={inputCls} textareaCls={textareaCls} />}
+          {type === "contract" && <ContractFields data={contract} setData={setContract} Section={BoundSection} inputCls={inputCls} textareaCls={textareaCls} />}
         </div>
 
         {/* Bottom Bar */}
@@ -234,16 +266,34 @@ export default function DocumentEditor({ type, workspaceName, clientName, freela
 // ════════════════════════════════════════════════════════
 //  PROPOSAL FIELDS
 // ════════════════════════════════════════════════════════
-function ProposalFields({ data, setData, Section, Field, inputCls, textareaCls }: {
+function ProposalFields({ data, setData, Section, inputCls, textareaCls }: {
   data: ProposalData; setData: React.Dispatch<React.SetStateAction<ProposalData>>;
   Section: (p: { id: string; title: string; children: React.ReactNode }) => JSX.Element;
-  Field: (p: { label: string; children: React.ReactNode }) => JSX.Element;
   inputCls: string; textareaCls: string;
 }) {
   const upd = <K extends keyof ProposalData>(key: K, val: ProposalData[K]) => setData((p) => ({ ...p, [key]: val }));
 
   return (
     <>
+      <Section id="branding" title="Branding & Logo">
+        <Field label="Company Logo URL">
+          <input className={inputCls} placeholder="https://example.com/logo.png" value={data.logoUrl} onChange={(e) => upd("logoUrl", e.target.value)} />
+        </Field>
+        {data.logoUrl && (
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={data.logoUrl} alt="Preview" className="h-12 w-auto object-contain rounded border border-gray-200 p-1" onError={(e) => (e.currentTarget.style.display = 'none')} />
+            <span className="text-[11px] text-gray-400">Logo preview</span>
+          </div>
+        )}
+        <Field label="Brand Color">
+          <div className="flex gap-2 items-center">
+            <input type="color" className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5" value={data.brandColor || "#1e3a5f"} onChange={(e) => upd("brandColor", e.target.value)} />
+            <input className={inputCls} value={data.brandColor || "#1e3a5f"} onChange={(e) => upd("brandColor", e.target.value)} />
+          </div>
+        </Field>
+      </Section>
+
       <Section id="general" title="General Information">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Company Name"><input className={inputCls} value={data.companyName} onChange={(e) => upd("companyName", e.target.value)} /></Field>
@@ -328,16 +378,34 @@ function ProposalFields({ data, setData, Section, Field, inputCls, textareaCls }
 // ════════════════════════════════════════════════════════
 //  INVOICE FIELDS
 // ════════════════════════════════════════════════════════
-function InvoiceFields({ data, setData, Section, Field, inputCls, textareaCls }: {
+function InvoiceFields({ data, setData, Section, inputCls, textareaCls }: {
   data: InvoiceData; setData: React.Dispatch<React.SetStateAction<InvoiceData>>;
   Section: (p: { id: string; title: string; children: React.ReactNode }) => JSX.Element;
-  Field: (p: { label: string; children: React.ReactNode }) => JSX.Element;
   inputCls: string; textareaCls: string;
 }) {
   const upd = <K extends keyof InvoiceData>(key: K, val: InvoiceData[K]) => setData((p) => ({ ...p, [key]: val }));
 
   return (
     <>
+      <Section id="branding" title="Branding & Logo">
+        <Field label="Company Logo URL">
+          <input className={inputCls} placeholder="https://example.com/logo.png" value={data.logoUrl} onChange={(e) => upd("logoUrl", e.target.value)} />
+        </Field>
+        {data.logoUrl && (
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={data.logoUrl} alt="Preview" className="h-12 w-auto object-contain rounded border border-gray-200 p-1" onError={(e) => (e.currentTarget.style.display = 'none')} />
+            <span className="text-[11px] text-gray-400">Logo preview</span>
+          </div>
+        )}
+        <Field label="Brand Color">
+          <div className="flex gap-2 items-center">
+            <input type="color" className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5" value={data.brandColor || "#0f4c81"} onChange={(e) => upd("brandColor", e.target.value)} />
+            <input className={inputCls} value={data.brandColor || "#0f4c81"} onChange={(e) => upd("brandColor", e.target.value)} />
+          </div>
+        </Field>
+      </Section>
+
       <Section id="general" title="Invoice Details">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Invoice Number"><input className={inputCls} value={data.invoiceNumber} onChange={(e) => upd("invoiceNumber", e.target.value)} /></Field>
@@ -400,16 +468,34 @@ function InvoiceFields({ data, setData, Section, Field, inputCls, textareaCls }:
 // ════════════════════════════════════════════════════════
 //  CONTRACT FIELDS
 // ════════════════════════════════════════════════════════
-function ContractFields({ data, setData, Section, Field, inputCls, textareaCls }: {
+function ContractFields({ data, setData, Section, inputCls, textareaCls }: {
   data: ContractData; setData: React.Dispatch<React.SetStateAction<ContractData>>;
   Section: (p: { id: string; title: string; children: React.ReactNode }) => JSX.Element;
-  Field: (p: { label: string; children: React.ReactNode }) => JSX.Element;
   inputCls: string; textareaCls: string;
 }) {
   const upd = <K extends keyof ContractData>(key: K, val: ContractData[K]) => setData((p) => ({ ...p, [key]: val }));
 
   return (
     <>
+      <Section id="branding" title="Branding & Logo">
+        <Field label="Company Logo URL">
+          <input className={inputCls} placeholder="https://example.com/logo.png" value={data.logoUrl} onChange={(e) => upd("logoUrl", e.target.value)} />
+        </Field>
+        {data.logoUrl && (
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={data.logoUrl} alt="Preview" className="h-12 w-auto object-contain rounded border border-gray-200 p-1" onError={(e) => (e.currentTarget.style.display = 'none')} />
+            <span className="text-[11px] text-gray-400">Logo preview</span>
+          </div>
+        )}
+        <Field label="Brand Color">
+          <div className="flex gap-2 items-center">
+            <input type="color" className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5" value={data.brandColor || "#1a3d2b"} onChange={(e) => upd("brandColor", e.target.value)} />
+            <input className={inputCls} value={data.brandColor || "#1a3d2b"} onChange={(e) => upd("brandColor", e.target.value)} />
+          </div>
+        </Field>
+      </Section>
+
       <Section id="general" title="Parties & Project">
         <Field label="Project Name"><input className={inputCls} value={data.projectName} onChange={(e) => upd("projectName", e.target.value)} /></Field>
         <div className="grid grid-cols-2 gap-3">

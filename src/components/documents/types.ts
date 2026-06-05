@@ -32,6 +32,8 @@ export interface ProposalData {
   taxRate: number;
   terms: string;
   notes: string;
+  logoUrl: string;
+  brandColor: string;
 }
 
 // ── Invoice ──
@@ -61,6 +63,8 @@ export interface InvoiceData {
   bankName: string;
   accountNumber: string;
   routingNumber: string;
+  logoUrl: string;
+  brandColor: string;
 }
 
 // ── Contract ──
@@ -91,6 +95,8 @@ export interface ContractData {
   liabilityClause: string;
   governingLaw: string;
   additionalTerms: string;
+  logoUrl: string;
+  brandColor: string;
 }
 
 export type DocumentType = "proposal" | "invoice" | "contract";
@@ -124,6 +130,8 @@ export const defaultProposal: ProposalData = {
   clientEmail: "client@company.com",
   date: today(),
   validUntil: in30Days(),
+  logoUrl: "",
+  brandColor: "#1e3a5f",
   introduction:
     "Thank you for considering our services. We are excited about the opportunity to work with you and bring your vision to life. This proposal outlines our understanding of your project, the scope of work, timeline, and investment required.",
   projectUnderstanding:
@@ -167,6 +175,8 @@ export const defaultInvoice: InvoiceData = {
   clientAddress: "456 Client Avenue\nCity, State 67890",
   issueDate: today(),
   dueDate: in14Days(),
+  logoUrl: "",
+  brandColor: "#0f4c81",
   items: [
     { id: uid(), description: "Discovery & Planning", quantity: 1, rate: 1500 },
     { id: uid(), description: "UI/UX Design", quantity: 40, rate: 85 },
@@ -191,6 +201,8 @@ export const defaultContract: ContractData = {
   projectName: "Project Name",
   effectiveDate: today(),
   completionDate: in30Days(),
+  logoUrl: "",
+  brandColor: "#1a3d2b",
   projectScope:
     "The Service Provider agrees to perform the following services for the Client: design and development of the project as described in the attached proposal, including all deliverables, milestones, and acceptance criteria agreed upon by both parties.",
   deliverables: [

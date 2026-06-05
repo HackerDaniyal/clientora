@@ -6,6 +6,7 @@ export default function InvoiceTemplate({ data }: { data: InvoiceData }) {
   const subtotal = calcSubtotal(data.items);
   const tax = calcTax(subtotal, data.taxRate);
   const total = subtotal + tax;
+  const brand = data.brandColor || "#0f4c81";
 
   const overdue = new Date(data.dueDate) < new Date() && total > 0;
 
@@ -22,7 +23,14 @@ export default function InvoiceTemplate({ data }: { data: InvoiceData }) {
       <div style={{ padding: "40px 40px 24px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         {/* Left — Company */}
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: "#0f4c81", letterSpacing: -0.5 }}>
+          {/* Logo */}
+          {data.logoUrl && (
+            <div style={{ marginBottom: 16 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={data.logoUrl} alt="Logo" style={{ maxHeight: 60, maxWidth: 200, objectFit: "contain" }} />
+            </div>
+          )}
+          <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: brand, letterSpacing: -0.5 }}>
             {data.companyName}
           </h1>
           <p style={{ margin: "8px 0 0", fontSize: 12, color: "#6b7280", whiteSpace: "pre-wrap" }}>
@@ -34,7 +42,7 @@ export default function InvoiceTemplate({ data }: { data: InvoiceData }) {
         </div>
         {/* Right — Invoice meta */}
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 32, fontWeight: 800, color: "#0f4c81", letterSpacing: -1, lineHeight: 1 }}>
+          <div style={{ fontSize: 32, fontWeight: 800, color: brand, letterSpacing: -1, lineHeight: 1 }}>
             INVOICE
           </div>
           <div style={{ marginTop: 8, fontSize: 13 }}>
@@ -69,7 +77,7 @@ export default function InvoiceTemplate({ data }: { data: InvoiceData }) {
       <div style={{ padding: "0 40px" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
-            <tr style={{ background: "#0f4c81", color: "#fff" }}>
+            <tr style={{ background: brand, color: "#fff" }}>
               <th style={{ ...thStyle, borderRadius: "6px 0 0 0", textAlign: "left", width: "50%" }}>Description</th>
               <th style={{ ...thStyle, textAlign: "center", width: "12%" }}>Qty</th>
               <th style={{ ...thStyle, textAlign: "right", width: "18%" }}>Rate</th>
@@ -102,9 +110,9 @@ export default function InvoiceTemplate({ data }: { data: InvoiceData }) {
               <span>{fmt(tax)}</span>
             </div>
           )}
-          <div style={{ borderTop: "2px solid #0f4c81", marginTop: 4, paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: "#0f4c81" }}>Total Due</span>
-            <span style={{ fontSize: 18, fontWeight: 800, color: "#0f4c81" }}>{fmt(total)}</span>
+          <div style={{ borderTop: `2px solid ${brand}`, marginTop: 4, paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: brand }}>Total Due</span>
+            <span style={{ fontSize: 18, fontWeight: 800, color: brand }}>{fmt(total)}</span>
           </div>
         </div>
       </div>
@@ -113,7 +121,7 @@ export default function InvoiceTemplate({ data }: { data: InvoiceData }) {
       {(data.bankName || data.paymentTerms) && (
         <div style={{ padding: "0 40px 32px" }}>
           <div style={{ background: "#f8fafc", borderRadius: 8, padding: "20px 24px", border: "1px solid #e5e7eb" }}>
-            <h3 style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 700, color: "#0f4c81" }}>Payment Information</h3>
+            <h3 style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 700, color: brand }}>Payment Information</h3>
             <div style={{ display: "flex", gap: 48, fontSize: 12 }}>
               <div>
                 {data.paymentTerms && (
@@ -173,6 +181,7 @@ const thStyle: React.CSSProperties = {
   fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: 0.5,
+  color: "#ffffff",
 };
 
 const tdStyle: React.CSSProperties = {
