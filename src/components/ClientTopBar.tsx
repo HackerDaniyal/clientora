@@ -108,8 +108,12 @@ export default function ClientTopBar() {
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="flex items-center gap-2 p-1 pr-2 rounded-lg hover:bg-brand-light/30 transition-colors"
               >
-                <div className="w-7 h-7 rounded-full bg-brand-accent/20 flex items-center justify-center text-brand-accent text-xs font-semibold">
-                  {profile?.full_name?.charAt(0).toUpperCase() || <IconUser size={14} />}
+                <div className="w-7 h-7 rounded-full bg-brand-accent/20 flex items-center justify-center text-brand-accent text-xs font-semibold overflow-hidden">
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    profile?.full_name?.charAt(0).toUpperCase() || <IconUser size={14} />
+                  )}
                 </div>
                 <span className="text-[12px] font-medium text-brand-dark hidden sm:block">
                   {profile?.full_name || "Client"}

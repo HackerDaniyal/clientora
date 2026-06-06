@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { sendInviteEmail } from '@/lib/email'
 
 export async function createTask(workspaceId: string, title: string, priority: string) {
   const supabase = createClient()
@@ -87,8 +88,8 @@ export async function toggleTask(taskId: string, completed: boolean) {
   const { error } = await supabase
     .from('tasks')
     .update({
-      status: completed ? 'completed' : 'todo',
-      completed_at: completed ? new Date().toISOString() : null
+      status: completed ? 'todo' : 'completed',
+      completed_at: completed ? null : new Date().toISOString()
     })
     .eq('id', taskId)
 
@@ -102,7 +103,7 @@ export async function toggleTask(taskId: string, completed: boolean) {
     .insert({
       workspace_id: task.workspace_id,
       user_id: user.id,
-      action: `${completed ? 'completed' : 'reopened'} task: ${task.title}`,
+      action: `${completed ? 'reopened' : 'completed'} task: ${task.title}`,
       entity_type: 'task',
       entity_id: taskId
     })
@@ -195,15 +196,38 @@ export async function inviteMember(workspaceId: string, email: string, role: str
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
+  // Only freelancer (workspace owner) can invite members
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('freelancer_id, name')
+    .eq('id', workspaceId)
+    .single()
+
+  if (!workspace || workspace.freelancer_id !== user.id) {
+    throw new Error('Only the freelancer can invite members')
+  }
+
   // Find user by email
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, full_name')
     .eq('email', email)
     .single()
 
   if (profileError || !profile) {
-    throw new Error('User not found')
+    throw new Error('User not found. Make sure the email is registered.')
+  }
+
+  // Check if already a member
+  const { data: existing } = await supabase
+    .from('workspace_members')
+    .select('id')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', profile.id)
+    .single()
+
+  if (existing) {
+    throw new Error('This user is already a member of this workspace')
   }
 
   // Add to workspace members
@@ -221,16 +245,84 @@ export async function inviteMember(workspaceId: string, email: string, role: str
     throw new Error('Failed to invite member')
   }
 
+  // Notify the invited member (in-app)
+  await supabase
+    .from('notifications')
+    .insert({
+      user_id: profile.id,
+      type: 'member_invited',
+      title: 'You\'ve been added to a workspace',
+      body: `You've been invited to "${workspace.name}" as ${role}. Open the workspace to get started.`,
+      data: { workspace_id: workspaceId, role }
+    })
+
+  // Get inviter's name for the email
+  const { data: inviterProfile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user.id)
+    .single()
+
+  // Send invitation email
+  const emailResult = await sendInviteEmail({
+    to: email,
+    workspaceName: workspace.name,
+    inviterName: inviterProfile?.full_name || 'A team member',
+    role,
+    workspaceId,
+  })
+
+  if (emailResult.error) {
+    console.error('Email send failed:', emailResult.error)
+  }
+
   // Log activity
   await supabase
     .from('activity_log')
     .insert({
       workspace_id: workspaceId,
       user_id: user.id,
-      action: `invited ${email} to workspace`,
+      action: `invited ${profile.full_name || email} as ${role}`,
       entity_type: 'member',
       entity_id: profile.id
     })
+
+  revalidatePath(`/workspace/${workspaceId}`)
+  
+  return { 
+    success: true, 
+    emailSent: !!emailResult.success,
+    emailSkipped: !!emailResult.skipped,
+    emailError: emailResult.error || null
+  }
+}
+
+export async function changeMemberRole(memberId: string, workspaceId: string, newRole: string) {
+  const supabase = createClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  // Only freelancer can change roles
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('freelancer_id')
+    .eq('id', workspaceId)
+    .single()
+
+  if (!workspace || workspace.freelancer_id !== user.id) {
+    throw new Error('Only the freelancer can change member roles')
+  }
+
+  const { error } = await supabase
+    .from('workspace_members')
+    .update({ role: newRole })
+    .eq('id', memberId)
+
+  if (error) {
+    console.error('Error changing role:', error)
+    throw new Error('Failed to change role')
+  }
 
   revalidatePath(`/workspace/${workspaceId}`)
 }

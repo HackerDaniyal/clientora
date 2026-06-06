@@ -30,7 +30,7 @@ import {
 } from "@tabler/icons-react";
 import { createClient } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createTask, toggleTask, inviteMember, removeMember, createDocument, updateDocument, sendDocument, deleteDocument, updateWorkspaceAssets, sendAssetsToFreelancer } from "./actions";
+import { createTask, toggleTask, inviteMember, removeMember, changeMemberRole, createDocument, updateDocument, sendDocument, deleteDocument, updateWorkspaceAssets, sendAssetsToFreelancer } from "./actions";
 import WorkspaceChat, { type ChatMessage } from "@/components/workspace/WorkspaceChat";
 import DocumentEditor from "@/components/documents/DocumentEditor";
 import type { DocumentType } from "@/components/documents/types";
@@ -86,6 +86,7 @@ export default function WorkspaceClient({
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState("medium");
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("viewer");
   const [loading, setLoading] = useState(false);
   const [showDocEditor, setShowDocEditor] = useState(false);
   const [editorDocType, setEditorDocType] = useState<DocumentType>('proposal');
@@ -277,11 +278,13 @@ export default function WorkspaceClient({
     return !!fd?.assets_sent_at;
   });
 
-  // Custom toast notification
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
+  // Custom toast notification with optional undo
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; onUndo?: () => void } | null>(null);
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info', onUndo?: () => void) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ message, type, onUndo });
+    toastTimerRef.current = setTimeout(() => setToast(null), onUndo ? 6000 : 3500);
   };
 
   // Download file as blob (saves to PC instead of opening in new tab)
@@ -459,18 +462,42 @@ export default function WorkspaceClient({
       await createTask(workspaceId, newTaskTitle, newTaskPriority);
       setNewTaskTitle("");
       await fetchTasks();
-    } catch {
-      alert("Failed to create task");
+      showToast('Task created!', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to create task', 'error');
     }
     setLoading(false);
   };
 
-  const handleToggleTask = async (taskId: string, completed: boolean) => {
+  const handleToggleTask = async (taskId: string, isCurrentlyCompleted: boolean) => {
+    // Optimistic update — toggle just this one task instantly
+    const newStatus = isCurrentlyCompleted ? 'todo' : 'completed';
+    const prevTasks = [...tasks];
+    setTasks(tasks.map(t =>
+      t.id === taskId
+        ? { ...t, status: newStatus, completed_at: isCurrentlyCompleted ? null : new Date().toISOString() }
+        : t
+    ));
+
+    // Undo function — reverts to previous state
+    const undo = () => {
+      setTasks(prevTasks);
+      showToast('Change reverted', 'info');
+    };
+
     try {
-      await toggleTask(taskId, completed);
+      await toggleTask(taskId, isCurrentlyCompleted);
+      showToast(
+        isCurrentlyCompleted ? 'Task reopened' : 'Task marked complete!',
+        'success',
+        undo
+      );
+      // Background refresh to stay in sync
       await fetchTasks();
-    } catch {
-      alert("Failed to update task");
+    } catch (err: any) {
+      // Revert on error
+      setTasks(prevTasks);
+      showToast(err.message || 'Failed to update task', 'error');
     }
   };
 
@@ -495,12 +522,22 @@ export default function WorkspaceClient({
     if (!inviteEmail.trim()) return;
     setLoading(true);
     try {
-      await inviteMember(workspaceId, inviteEmail, "viewer");
+      const result = await inviteMember(workspaceId, inviteEmail, inviteRole);
       setInviteEmail("");
+      setInviteRole("viewer");
       await fetchMembers();
-      alert("Member invited!");
-    } catch {
-      alert("Failed to invite member. Check the email is registered.");
+      
+      if (result.emailSent) {
+        showToast(`Member invited & email sent!`, 'success');
+      } else if (result.emailError) {
+        showToast(`Member added but email failed: ${result.emailError}`, 'error');
+      } else if (result.emailSkipped) {
+        showToast(`Member added (email not configured)`, 'info');
+      } else {
+        showToast(`Member invited as ${inviteRole}!`, 'success');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to invite member', 'error');
     }
     setLoading(false);
   };
@@ -510,8 +547,19 @@ export default function WorkspaceClient({
     try {
       await removeMember(memberId, workspaceId);
       setMembers(members.filter((m) => m.id !== memberId));
-    } catch {
-      alert("Failed to remove member");
+      showToast('Member removed', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to remove member', 'error');
+    }
+  };
+
+  const handleChangeMemberRole = async (memberId: string, newRole: string) => {
+    try {
+      await changeMemberRole(memberId, workspaceId, newRole);
+      setMembers(members.map(m => m.id === memberId ? { ...m, role: newRole } : m));
+      showToast(`Role changed to ${newRole}`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to change role', 'error');
     }
   };
 
@@ -548,7 +596,7 @@ export default function WorkspaceClient({
     <div className="min-h-screen bg-brand-surface">
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium animate-[fadeInDown_0.3s_ease-out] ${
+        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-xl shadow-lg flex items-center gap-3 text-sm font-medium animate-[fadeInDown_0.3s_ease-out] ${
           toast.type === 'success' ? 'bg-green-500 text-white' :
           toast.type === 'error' ? 'bg-red-500 text-white' :
           'bg-blue-500 text-white'
@@ -557,6 +605,17 @@ export default function WorkspaceClient({
           {toast.type === 'error' && <IconCircleX size={18} />}
           {toast.type === 'info' && <IconInfoCircle size={18} />}
           <span>{toast.message}</span>
+          {toast.onUndo && (
+            <button
+              onClick={() => {
+                toast.onUndo!();
+                setToast(null);
+              }}
+              className="ml-1 px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-[12px] font-semibold transition-colors"
+            >
+              Undo
+            </button>
+          )}
         </div>
       )}
 
@@ -1009,28 +1068,24 @@ export default function WorkspaceClient({
                   {tasks.map((task) => (
                     <div
                       key={task.id}
-                      className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
+                      onClick={() => canToggleTasks && handleToggleTask(task.id, task.status === "completed")}
+                      className={`flex items-center gap-4 p-4 rounded-lg border transition-all cursor-pointer select-none ${
                         task.status === "completed"
                           ? "bg-brand-surface border-brand-light/30 opacity-60"
-                          : "bg-white border-brand-light/50 hover:border-brand-accent"
+                          : "bg-white border-brand-light/50 hover:border-brand-accent hover:shadow-sm"
                       }`}
                     >
                       {canToggleTasks && (
-                        <button
-                          type="button"
-                          onClick={() => handleToggleTask(task.id, task.status === "completed")}
-                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                            task.status === "completed"
-                              ? "bg-brand-mid border-brand-mid text-white"
-                              : "border-brand-light hover:border-brand-accent"
-                          }`}
-                          aria-label={task.status === "completed" ? "Mark incomplete" : "Mark complete"}
-                        >
-                          {task.status === "completed" && <IconCheck size={14} />}
-                        </button>
+                        <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                          task.status === "completed"
+                            ? "bg-brand-mid border-brand-mid text-white scale-110"
+                            : "border-brand-light hover:border-brand-accent hover:scale-105"
+                        }`}>
+                          {task.status === "completed" && <IconCheck size={16} strokeWidth={3} />}
+                        </div>
                       )}
                       <div className="flex-1">
-                        <p className={`text-[14px] font-medium text-brand-dark ${task.status === "completed" ? "line-through" : ""}`}>
+                        <p className={`text-[14px] font-medium text-brand-dark transition-all ${task.status === "completed" ? "line-through opacity-60" : ""}`}>
                           {task.title}
                         </p>
                         <p className="text-[11px] text-text-tertiary mt-0.5">
@@ -1217,8 +1272,8 @@ export default function WorkspaceClient({
         {/* Members Tab */}
         {activeTab === "members" && (
           <div className="space-y-6">
-            {/* Invite Member */}
-            {userRole === "editor" && (
+            {/* Invite Member — freelancer only */}
+            {accountRole === 'freelancer' && (
               <div className="card bg-white p-6">
                 <h3 className="text-lg font-semibold text-brand-dark mb-4">Invite Member</h3>
                 <div className="flex gap-3">
@@ -1228,56 +1283,137 @@ export default function WorkspaceClient({
                     onChange={(e) => setInviteEmail(e.target.value)}
                     placeholder="Email address..."
                     className="flex-1 bg-brand-surface border border-brand-light rounded-lg px-4 py-2.5 outline-none focus:border-brand-accent"
+                    onKeyDown={(e) => e.key === "Enter" && handleInviteMember()}
                   />
+                  <select
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value)}
+                    className="bg-brand-surface border border-brand-light rounded-lg px-4 py-2.5 outline-none focus:border-brand-accent"
+                  >
+                    <option value="viewer">Viewer</option>
+                    <option value="editor">Editor</option>
+                  </select>
                   <button
                     onClick={handleInviteMember}
                     disabled={loading || !inviteEmail.trim()}
                     className="pill-btn bg-brand-accent text-white disabled:opacity-50"
                   >
-                    <IconPlus size={18} />
+                    {loading ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <IconPlus size={18} />
+                    )}
                     Invite
                   </button>
                 </div>
+                <p className="text-[11px] text-text-tertiary mt-2">
+                  The user must have a registered account. They'll receive a notification when added.
+                </p>
               </div>
             )}
 
-            {/* Members List */}
+            {/* Workspace Owners */}
             <div className="card bg-white p-6">
-              <h3 className="text-lg font-semibold text-brand-dark mb-4">Team Members ({members.length})</h3>
+              <h3 className="text-lg font-semibold text-brand-dark mb-4">Workspace Owners</h3>
               <div className="space-y-3">
-                {members.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-4 rounded-lg border border-brand-light/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-brand-accent/20 rounded-full flex items-center justify-center">
-                        <span className="text-[14px] font-medium text-brand-accent">
-                          {member.profiles?.full_name?.charAt(0) || "U"}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-[14px] font-medium text-brand-dark">
-                          {member.profiles?.full_name || "Unknown"}
-                        </p>
-                        <p className="text-[12px] text-text-tertiary">
-                          {member.profiles?.email || "No email"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="badge text-[11px] bg-brand-light/30 text-brand-dark">
-                        {member.role}
+                <div className="flex items-center justify-between p-4 rounded-lg border border-brand-light/50 bg-brand-tint/20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-brand-dark/10 rounded-full flex items-center justify-center">
+                      <span className="text-[14px] font-medium text-brand-dark">
+                        {workspace?.freelancer?.full_name?.charAt(0) || "F"}
                       </span>
-                      {userRole === "editor" && (
-                        <button
-                          onClick={() => handleRemoveMember(member.id)}
-                          className="p-2 hover:bg-red-100 text-text-secondary hover:text-red-600 rounded-lg transition-colors"
-                        >
-                          <IconTrash size={16} />
-                        </button>
-                      )}
+                    </div>
+                    <div>
+                      <p className="text-[14px] font-medium text-brand-dark">
+                        {workspace?.freelancer?.full_name || "Freelancer"}
+                      </p>
+                      <p className="text-[12px] text-text-tertiary">Freelancer · Owner</p>
                     </div>
                   </div>
-                ))}
+                  <span className="badge text-[11px] bg-brand-dark/10 text-brand-dark font-semibold">
+                    Owner
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-4 rounded-lg border border-brand-light/50 bg-brand-tint/20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-brand-accent/10 rounded-full flex items-center justify-center">
+                      <span className="text-[14px] font-medium text-brand-accent">
+                        {workspace?.client?.full_name?.charAt(0) || "C"}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-[14px] font-medium text-brand-dark">
+                        {workspace?.client?.full_name || "Client"}
+                      </p>
+                      <p className="text-[12px] text-text-tertiary">Client · Owner</p>
+                    </div>
+                  </div>
+                  <span className="badge text-[11px] bg-brand-accent/10 text-brand-dark font-semibold">
+                    Owner
+                  </span>
+                </div>
               </div>
+            </div>
+
+            {/* Added Members */}
+            <div className="card bg-white p-6">
+              <h3 className="text-lg font-semibold text-brand-dark mb-4">
+                Team Members ({members.length})
+              </h3>
+              {members.length === 0 ? (
+                <p className="text-text-secondary text-center py-8">
+                  No additional members yet.
+                  {accountRole === 'freelancer' ? " Invite someone above." : ""}
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {members.map((member) => (
+                    <div key={member.id} className="flex items-center justify-between p-4 rounded-lg border border-brand-light/50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-brand-accent/20 rounded-full flex items-center justify-center">
+                          <span className="text-[14px] font-medium text-brand-accent">
+                            {member.profiles?.full_name?.charAt(0) || "U"}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-[14px] font-medium text-brand-dark">
+                            {member.profiles?.full_name || "Unknown"}
+                          </p>
+                          <p className="text-[12px] text-text-tertiary">
+                            {member.profiles?.email || "No email"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {accountRole === 'freelancer' ? (
+                          <>
+                            <select
+                              value={member.role}
+                              onChange={(e) => handleChangeMemberRole(member.id, e.target.value)}
+                              className="bg-brand-surface border border-brand-light rounded-lg px-3 py-1.5 text-[12px] outline-none focus:border-brand-accent cursor-pointer"
+                            >
+                              <option value="viewer">Viewer</option>
+                              <option value="editor">Editor</option>
+                            </select>
+                            <button
+                              onClick={() => handleRemoveMember(member.id)}
+                              className="p-2 hover:bg-red-100 text-text-secondary hover:text-red-600 rounded-lg transition-colors"
+                            >
+                              <IconTrash size={16} />
+                            </button>
+                          </>
+                        ) : (
+                          <span className={`badge text-[11px] ${
+                            member.role === 'editor' ? 'bg-blue-100 text-blue-700' : 'bg-brand-light/30 text-brand-dark'
+                          }`}>
+                            {member.role}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

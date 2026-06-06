@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { createClient } from "@/lib/supabase";
 import { 
   IconLayoutDashboard, 
   IconUsers, 
@@ -18,7 +19,8 @@ import {
   IconLink,
   IconInbox,
   IconBell,
-  IconLayoutKanban
+  IconLayoutKanban,
+  IconUser,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +67,23 @@ const navItems: Record<"freelancer" | "client" | "admin", NavItem[]> = {
 export default function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
   const items = navItems[role];
+  const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null; email: string | null } | null>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("full_name, avatar_url, email")
+          .eq("id", user.id)
+          .single();
+        setProfile({ full_name: data?.full_name, avatar_url: data?.avatar_url, email: user.email || null });
+      }
+    };
+    fetchProfile();
+  }, []);
 
   return (
     <aside className="w-[160px] h-screen bg-brand-surface border-r border-brand-light flex flex-col shrink-0">
@@ -112,7 +131,7 @@ export default function Sidebar({ role }: SidebarProps) {
       </nav>
 
       {/* AI Assistant CTA at bottom */}
-      <div className="p-4 mt-auto">
+      <div className="p-4 mt-auto space-y-3">
         <div className="bg-[#8BC38A22] border-[0.5px] border-brand-accent rounded-medium p-3 flex flex-col gap-2 items-center text-center">
           <IconSparkles size={18} stroke={2} className="text-brand-dark" />
           <span className="text-[11px] font-medium text-brand-dark">Need help?</span>
@@ -124,6 +143,29 @@ export default function Sidebar({ role }: SidebarProps) {
             Ask Gemini
           </button>
         </div>
+
+        {/* User profile */}
+        <Link
+          href={`/${role}/settings`}
+          className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-brand-light/30 transition-colors"
+        >
+          <div className="w-8 h-8 rounded-full bg-brand-accent/20 flex items-center justify-center text-brand-accent text-xs font-semibold shrink-0 overflow-hidden">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              profile?.full_name?.charAt(0).toUpperCase() || <IconUser size={16} />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[12px] font-medium text-brand-dark truncate">
+              {profile?.full_name || "User"}
+            </p>
+            <p className="text-[10px] text-text-tertiary truncate">
+              {profile?.email || ""}
+            </p>
+          </div>
+          <IconSettings size={14} className="text-text-tertiary shrink-0" />
+        </Link>
       </div>
     </aside>
   );

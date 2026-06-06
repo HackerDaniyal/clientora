@@ -85,9 +85,19 @@ export default function WorkspaceChat({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const markedDeliveredRef = useRef<Set<string>>(new Set());
   const markedReadRef = useRef<Set<string>>(new Set());
+  const isNearBottomRef = useRef(true);
+  const prevScrollHeightRef = useRef(0);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior });
+  }, []);
+
+  // Track whether user is near the bottom of the scroll container
+  const handleScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const threshold = 120;
+    isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
   }, []);
 
   const fetchMessages = useCallback(async () => {
@@ -204,7 +214,18 @@ export default function WorkspaceChat({
   }, [supabase]);
 
   useEffect(() => {
-    scrollToBottom(messages.length <= initialMessages.length ? "auto" : "smooth");
+    // Only auto-scroll if user is near the bottom (not browsing history)
+    if (isNearBottomRef.current) {
+      scrollToBottom(messages.length <= initialMessages.length ? "auto" : "smooth");
+    } else {
+      // Preserve scroll position when messages update while user is scrolled up
+      const el = scrollContainerRef.current;
+      if (el) {
+        const diff = el.scrollHeight - prevScrollHeightRef.current;
+        if (diff > 0) el.scrollTop += diff;
+      }
+    }
+    prevScrollHeightRef.current = scrollContainerRef.current?.scrollHeight ?? 0;
   }, [messages, scrollToBottom, initialMessages.length]);
 
   useEffect(() => {
@@ -284,6 +305,7 @@ export default function WorkspaceChat({
     setMessages((prev) => [...prev, optimistic]);
     setNewMessage("");
     setSending(true);
+    isNearBottomRef.current = true; // Force scroll to bottom for own messages
     scrollToBottom();
 
     try {
@@ -306,7 +328,7 @@ export default function WorkspaceChat({
       <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto p-4 md:p-6"
-        onScroll={() => markVisibleAsRead()}
+        onScroll={() => { handleScroll(); markVisibleAsRead(); }}
       >
         {messages.length === 0 ? (
           <div className="text-center py-12">
