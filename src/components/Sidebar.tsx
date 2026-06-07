@@ -10,7 +10,6 @@ import {
   IconBriefcase, 
   IconFileInvoice, 
   IconMessageCircle, 
-  IconRobot, 
   IconSettings, 
   IconChecklist, 
   IconFileText,
@@ -121,7 +120,7 @@ export default function Sidebar({ role }: SidebarProps) {
                 <IconChevronDown size={12} stroke={2} className={cn(isActive ? "text-white" : "text-text-tertiary")} />
               )}
               {item.badge && (
-                <span className="bg-status-overdue text-white text-[9px] px-[5px] py-[1px] rounded-pill">
+                <span className="badge badge-danger !text-[9px] !px-1.5 !py-0 min-w-[18px] justify-center">
                   {item.badge}
                 </span>
               )}

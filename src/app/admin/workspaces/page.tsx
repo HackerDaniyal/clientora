@@ -46,7 +46,7 @@ export default async function AdminWorkspaces() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="badge text-[11px] bg-brand-light/30 text-brand-dark capitalize">{ws.status}</span>
+              <span className="badge badge-accent capitalize">{ws.status}</span>
               <Link href={`/workspace/${ws.id}`} className="pill-btn-outline text-[12px] px-3 py-1.5">
                 Open
               </Link>

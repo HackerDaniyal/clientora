@@ -103,10 +103,10 @@ export default async function AdminDashboard() {
                       <p className="text-[11px] text-text-tertiary">{user.email}</p>
                     </div>
                   </div>
-                  <span className={`badge text-[10px] ${
-                    user.role === "freelancer" ? "bg-green-100 text-green-700" :
-                    user.role === "client" ? "bg-blue-100 text-blue-700" :
-                    "bg-gray-100 text-gray-700"
+                  <span className={`badge ${
+                    user.role === "freelancer" ? "badge-success" :
+                    user.role === "client" ? "badge-info" :
+                    "badge-neutral"
                   }`}>
                     {user.role}
                   </span>
@@ -123,15 +123,15 @@ export default async function AdminDashboard() {
           <div className="space-y-4 mt-4">
             <div className="flex justify-between items-center p-3 bg-brand-surface rounded-lg">
               <span className="text-[13px] text-text-secondary">Database Status</span>
-              <span className="badge bg-green-100 text-green-700 text-[10px]">Connected</span>
+              <span className="badge badge-success">Connected</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-brand-surface rounded-lg">
               <span className="text-[13px] text-text-secondary">Auth Service</span>
-              <span className="badge bg-green-100 text-green-700 text-[10px]">Active</span>
+              <span className="badge badge-success">Active</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-brand-surface rounded-lg">
               <span className="text-[13px] text-text-secondary">Realtime</span>
-              <span className="badge bg-green-100 text-green-700 text-[10px]">Active</span>
+              <span className="badge badge-success">Active</span>
             </div>
           </div>
         </div>

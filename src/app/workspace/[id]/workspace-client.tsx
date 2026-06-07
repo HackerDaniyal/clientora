@@ -574,21 +574,21 @@ export default function WorkspaceClient({
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "urgent": return "bg-red-100 text-red-700";
-      case "high": return "bg-orange-100 text-orange-700";
-      case "medium": return "bg-blue-100 text-blue-700";
-      case "low": return "bg-gray-100 text-gray-700";
-      default: return "bg-gray-100 text-gray-700";
+      case "urgent": return "badge-danger";
+      case "high": return "badge-warning";
+      case "medium": return "badge-info";
+      case "low": return "badge-neutral";
+      default: return "badge-neutral";
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "active": return "badge bg-green-100 text-green-700";
-      case "review": return "badge bg-blue-100 text-blue-700";
-      case "completed": return "badge bg-purple-100 text-purple-700";
-      case "archived": return "badge bg-gray-100 text-gray-700";
-      default: return "badge bg-gray-100 text-gray-700";
+      case "active": return "badge badge-success";
+      case "review": return "badge badge-info";
+      case "completed": return "badge badge-purple";
+      case "archived": return "badge badge-neutral";
+      default: return "badge badge-neutral";
     }
   };
 
@@ -1199,13 +1199,13 @@ export default function WorkspaceClient({
                         {doc.amount && (
                           <span className="text-[14px] font-semibold text-brand-dark">${doc.amount}</span>
                         )}
-                        <span className={`badge text-[11px] ${
-                          doc.status === 'draft' ? 'bg-gray-100 text-gray-700' :
-                          doc.status === 'sent' ? 'bg-blue-100 text-blue-700' :
-                          doc.status === 'viewed' ? 'bg-purple-100 text-purple-700' :
-                          doc.status === 'approved' ? 'bg-green-100 text-green-700' :
-                          doc.status === 'paid' ? 'bg-green-100 text-green-700' :
-                          'bg-gray-100 text-gray-700'
+                        <span className={`badge ${
+                          doc.status === 'draft' ? 'badge-neutral' :
+                          doc.status === 'sent' ? 'badge-info' :
+                          doc.status === 'viewed' ? 'badge-purple' :
+                          doc.status === 'approved' ? 'badge-success' :
+                          doc.status === 'paid' ? 'badge-success' :
+                          'badge-neutral'
                         }`}>
                           {doc.status}
                         </span>

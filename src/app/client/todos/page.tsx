@@ -73,10 +73,10 @@ export default async function ClientTodos() {
                     {task.workspace?.name} · {task.assignee?.full_name || 'Unassigned'}
                   </p>
                 </div>
-                <span className={`badge text-[11px] ${
-                  task.priority === 'high' ? 'bg-red-100 text-red-700' :
-                  task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-green-100 text-green-700'
+                <span className={`badge ${
+                  task.priority === 'high' ? 'badge-danger' :
+                  task.priority === 'medium' ? 'badge-warning' :
+                  'badge-success'
                 }`}>
                   {task.priority}
                 </span>

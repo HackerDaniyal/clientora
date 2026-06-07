@@ -46,7 +46,7 @@ function getInitials(name: string | null | undefined): string {
 }
 
 function statusBadgeClass(status: string | null | undefined) {
-  if (!status) return "bg-gray-100 text-text-secondary";
+  if (!status) return "badge-neutral";
   switch (status) {
     case "active":
       return "badge-success";
@@ -55,7 +55,7 @@ function statusBadgeClass(status: string | null | undefined) {
     case "paused":
       return "badge-warning";
     default:
-      return "bg-gray-100 text-text-secondary";
+      return "badge-neutral";
   }
 }
 
@@ -105,7 +105,7 @@ function PipelineCard({
           {workspace.project_type && (
             <span className="text-[11px] text-text-tertiary">{workspace.project_type}</span>
           )}
-          <span className={`badge text-[10px] ${statusBadgeClass(workspace.status)}`}>
+          <span className={`badge ${statusBadgeClass(workspace.status)}`}>
             {formatStatus(workspace.status)}
           </span>
           <Link href={href} className="pill-btn-outline py-1.5 text-[12px]">
@@ -139,13 +139,11 @@ function PipelineCard({
         </div>
       </div>
       <div className="mt-2 flex flex-wrap gap-1.5">
-        <span className={`badge text-[10px] ${statusBadgeClass(workspace.status)}`}>
+        <span className={`badge ${statusBadgeClass(workspace.status)}`}>
           {formatStatus(workspace.status)}
         </span>
         {workspace.project_type && (
-          <span className="rounded-badge bg-brand-surface px-1.5 py-0.5 text-[10px] text-text-secondary">
-            {workspace.project_type}
-          </span>
+          <span className="badge badge-neutral">{workspace.project_type}</span>
         )}
       </div>
       <div className="mt-2.5 flex items-center gap-2">

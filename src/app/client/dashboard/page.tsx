@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { IconBriefcase, IconArrowRight, IconPlus } from "@tabler/icons-react";
+import { IconBriefcase, IconArrowRight, IconPlus, IconFileText, IconMessageCircle, IconFileInvoice, IconFolderOpen } from "@tabler/icons-react";
 
 export default async function ClientDashboard() {
   const supabase = createClient();
@@ -48,7 +48,7 @@ export default async function ClientDashboard() {
                 <h2 className="text-2xl font-semibold mt-1">{activeWorkspace.name}</h2>
               </div>
               <div className="flex items-center gap-2">
-                <span className="badge bg-brand-accent/20 text-brand-accent text-[9px]">{activeWorkspace.status}</span>
+                <span className="badge badge-accent">{activeWorkspace.status}</span>
                 <IconArrowRight size={20} className="text-brand-accent group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
@@ -94,11 +94,11 @@ export default async function ClientDashboard() {
                       {workspace.project_type || 'Project'} · {new Date(workspace.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <span className={`badge text-[9px] ${
-                    workspace.status === 'active' ? 'bg-green-100 text-green-700' :
-                    workspace.status === 'review' ? 'bg-blue-100 text-blue-700' :
-                    workspace.status === 'completed' ? 'bg-purple-100 text-purple-700' :
-                    'bg-gray-100 text-gray-700'
+                  <span className={`badge ${
+                    workspace.status === 'active' ? 'badge-success' :
+                    workspace.status === 'review' ? 'badge-info' :
+                    workspace.status === 'completed' ? 'badge-purple' :
+                    'badge-neutral'
                   }`}>
                     {workspace.status}
                   </span>
@@ -113,29 +113,39 @@ export default async function ClientDashboard() {
         <div className="card">
           <h3 className="section-title">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-3">
-            <Link href="/client/setup-project" className="flex flex-col items-center gap-2 p-4 bg-brand-surface rounded-medium hover:bg-brand-light/30 transition-colors">
-              <span className="text-2xl">📄</span>
-              <span className="text-[11px] font-medium text-text-secondary">New Project Request</span>
+            <Link href="/client/setup-project" className="flex flex-col items-center gap-3 p-4 bg-brand-surface rounded-xl hover:bg-brand-tint/40 hover:border-brand-accent/30 border border-transparent transition-all group">
+              <div className="w-10 h-10 rounded-lg bg-brand-tint flex items-center justify-center group-hover:bg-brand-accent/20 transition-colors">
+                <IconFileText size={20} className="text-brand-mid" />
+              </div>
+              <span className="text-[12px] font-medium text-text-secondary">New Project Request</span>
             </Link>
             {activeWorkspace && (
-              <Link href={`/workspace/${activeWorkspace.id}`} className="flex flex-col items-center gap-2 p-4 bg-brand-surface rounded-medium hover:bg-brand-light/30 transition-colors">
-                <span className="text-2xl">💬</span>
-                <span className="text-[11px] font-medium text-text-secondary">Open Workspace</span>
+              <Link href={`/workspace/${activeWorkspace.id}`} className="flex flex-col items-center gap-3 p-4 bg-brand-surface rounded-xl hover:bg-brand-tint/40 hover:border-brand-accent/30 border border-transparent transition-all group">
+                <div className="w-10 h-10 rounded-lg bg-brand-tint flex items-center justify-center group-hover:bg-brand-accent/20 transition-colors">
+                  <IconMessageCircle size={20} className="text-brand-mid" />
+                </div>
+                <span className="text-[12px] font-medium text-text-secondary">Open Workspace</span>
               </Link>
             )}
-            <Link href="/client/documents" className="flex flex-col items-center gap-2 p-4 bg-brand-surface rounded-medium hover:bg-brand-light/30 transition-colors">
-              <span className="text-2xl">💰</span>
-              <span className="text-[11px] font-medium text-text-secondary">View Invoices</span>
+            <Link href="/client/documents" className="flex flex-col items-center gap-3 p-4 bg-brand-surface rounded-xl hover:bg-brand-tint/40 hover:border-brand-accent/30 border border-transparent transition-all group">
+              <div className="w-10 h-10 rounded-lg bg-brand-tint flex items-center justify-center group-hover:bg-brand-accent/20 transition-colors">
+                <IconFileInvoice size={20} className="text-brand-mid" />
+              </div>
+              <span className="text-[12px] font-medium text-text-secondary">View Invoices</span>
             </Link>
             {activeWorkspace ? (
-              <Link href={`/workspace/${activeWorkspace.id}?tab=assets`} className="flex flex-col items-center gap-2 p-4 bg-brand-surface rounded-medium hover:bg-brand-light/30 transition-colors">
-                <span className="text-2xl">📁</span>
-                <span className="text-[11px] font-medium text-text-secondary">View Assets</span>
+              <Link href={`/workspace/${activeWorkspace.id}?tab=assets`} className="flex flex-col items-center gap-3 p-4 bg-brand-surface rounded-xl hover:bg-brand-tint/40 hover:border-brand-accent/30 border border-transparent transition-all group">
+                <div className="w-10 h-10 rounded-lg bg-brand-tint flex items-center justify-center group-hover:bg-brand-accent/20 transition-colors">
+                  <IconFolderOpen size={20} className="text-brand-mid" />
+                </div>
+                <span className="text-[12px] font-medium text-text-secondary">View Assets</span>
               </Link>
             ) : (
-              <Link href="/client/setup-project" className="flex flex-col items-center gap-2 p-4 bg-brand-surface rounded-medium hover:bg-brand-light/30 transition-colors">
-                <span className="text-2xl">📁</span>
-                <span className="text-[11px] font-medium text-text-secondary">Upload Assets</span>
+              <Link href="/client/setup-project" className="flex flex-col items-center gap-3 p-4 bg-brand-surface rounded-xl hover:bg-brand-tint/40 hover:border-brand-accent/30 border border-transparent transition-all group">
+                <div className="w-10 h-10 rounded-lg bg-brand-tint flex items-center justify-center group-hover:bg-brand-accent/20 transition-colors">
+                  <IconFolderOpen size={20} className="text-brand-mid" />
+                </div>
+                <span className="text-[12px] font-medium text-text-secondary">Upload Assets</span>
               </Link>
             )}
           </div>

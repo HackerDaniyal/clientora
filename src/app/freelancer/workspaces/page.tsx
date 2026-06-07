@@ -39,11 +39,11 @@ export default async function FreelancerWorkspaces() {
                 <div className="w-12 h-12 bg-brand-accent/20 rounded-lg flex items-center justify-center">
                   <IconBriefcase size={24} className="text-brand-accent" />
                 </div>
-                <span className={`badge text-[11px] ${
-                  workspace.status === 'active' ? 'bg-green-100 text-green-700' :
-                  workspace.status === 'review' ? 'bg-blue-100 text-blue-700' :
-                  workspace.status === 'completed' ? 'bg-purple-100 text-purple-700' :
-                  'bg-gray-100 text-gray-700'
+                <span className={`badge ${
+                  workspace.status === 'active' ? 'badge-success' :
+                  workspace.status === 'review' ? 'badge-info' :
+                  workspace.status === 'completed' ? 'badge-purple' :
+                  'badge-neutral'
                 }`}>
                   {workspace.status}
                 </span>

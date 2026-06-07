@@ -86,11 +86,11 @@ export default function RequestsClient({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "pending":
-        return <span className="badge badge-warning text-[10px]">Pending</span>;
+        return <span className="badge badge-warning">Pending</span>;
       case "accepted":
-        return <span className="badge badge-success text-[10px]">Accepted</span>;
+        return <span className="badge badge-success">Accepted</span>;
       case "rejected":
-        return <span className="badge badge-danger text-[10px]">Rejected</span>;
+        return <span className="badge badge-danger">Rejected</span>;
       default:
         return null;
     }

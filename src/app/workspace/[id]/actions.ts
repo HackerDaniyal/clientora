@@ -4,6 +4,84 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { sendInviteEmail } from '@/lib/email'
 
+export async function toggleMessageReaction(messageId: string, emoji: string) {
+  const supabase = createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  // Fetch current reactions
+  const { data: message } = await supabase
+    .from('messages')
+    .select('reactions, workspace_id')
+    .eq('id', messageId)
+    .single()
+
+  if (!message) throw new Error('Message not found')
+
+  const reactions = (message.reactions as Record<string, string[]>) || {}
+  const users = reactions[emoji] || []
+
+  if (users.includes(user.id)) {
+    // Remove user's reaction
+    const updated = users.filter((id) => id !== user.id)
+    if (updated.length === 0) {
+      delete reactions[emoji]
+    } else {
+      reactions[emoji] = updated
+    }
+  } else {
+    // Add user's reaction
+    reactions[emoji] = [...users, user.id]
+  }
+
+  const { error } = await supabase
+    .from('messages')
+    .update({ reactions })
+    .eq('id', messageId)
+
+  if (error) {
+    console.error('Error toggling reaction:', error)
+    throw new Error('Failed to toggle reaction')
+  }
+
+  revalidatePath(`/workspace/${message.workspace_id}`)
+}
+
+export async function uploadChatAttachment(formData: FormData) {
+  const supabase = createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const workspaceId = formData.get('workspaceId') as string
+  const file = formData.get('file') as File
+
+  if (!workspaceId || !file) throw new Error('Missing data')
+
+  // Max 10MB
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error('File too large. Maximum size is 10MB.')
+  }
+
+  const path = `${workspaceId}/chat/${Date.now()}_${file.name}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('project-assets')
+    .upload(path, file, { upsert: false, cacheControl: '3600' })
+
+  if (uploadError) {
+    console.error('Error uploading chat attachment:', uploadError)
+    throw new Error('Failed to upload file')
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('project-assets')
+    .getPublicUrl(path)
+
+  return { url: urlData.publicUrl, name: file.name }
+}
+
 export async function createTask(workspaceId: string, title: string, priority: string) {
   const supabase = createClient()
   
@@ -111,7 +189,7 @@ export async function toggleTask(taskId: string, completed: boolean) {
   revalidatePath(`/workspace/${task.workspace_id}`)
 }
 
-export async function sendMessage(workspaceId: string, content: string, fileUrl?: string, fileName?: string) {
+export async function sendMessage(workspaceId: string, content: string, fileUrl?: string, fileName?: string, replyToId?: string) {
   const supabase = createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -124,7 +202,8 @@ export async function sendMessage(workspaceId: string, content: string, fileUrl?
       sender_id: user.id,
       content,
       file_url: fileUrl,
-      file_name: fileName
+      file_name: fileName,
+      reply_to_id: replyToId || null
     })
 
   if (error) {

@@ -56,20 +56,40 @@ body {
     @apply inline-flex items-center gap-2 bg-transparent border-[0.5px] border-gray-300 rounded-[8px] px-4 py-[7px] text-[13px] text-text-primary transition-colors hover:bg-brand-surface;
   }
 
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium leading-none whitespace-nowrap;
+  }
+
   .badge-success {
-    @apply bg-brand-tint text-brand-dark;
+    @apply bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60;
   }
 
   .badge-danger {
-    @apply bg-red-100 text-red-700;
+    @apply bg-red-50 text-red-600 ring-1 ring-red-200/60;
   }
 
   .badge-warning {
-    @apply bg-amber-100 text-amber-800;
+    @apply bg-amber-50 text-amber-700 ring-1 ring-amber-200/60;
   }
 
   .badge-info {
-    @apply bg-brand-tint text-brand-mid;
+    @apply bg-blue-50 text-blue-700 ring-1 ring-blue-200/60;
+  }
+
+  .badge-neutral {
+    @apply bg-gray-100 text-gray-600 ring-1 ring-gray-200/60;
+  }
+
+  .badge-accent {
+    @apply bg-brand-accent/10 text-brand-mid ring-1 ring-brand-accent/20;
+  }
+
+  .badge-dark {
+    @apply bg-brand-dark text-white;
+  }
+
+  .badge-purple {
+    @apply bg-purple-50 text-purple-700 ring-1 ring-purple-200/60;
   }
 }
 
@@ -151,4 +171,39 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+/* ---- Chat Markdown Styles ---- */
+.prose-chat {
+  line-height: 1.55;
+  word-break: break-word;
+}
+.prose-chat p {
+  display: inline;
+}
+.prose-chat strong {
+  font-weight: 600;
+}
+.prose-chat em {
+  font-style: italic;
+}
+.prose-chat code {
+  font-family: ui-monospace, monospace;
+}
+.prose-chat pre {
+  font-family: ui-monospace, monospace;
+}
+.prose-chat ul,
+.prose-chat ol {
+  margin: 0.25em 0;
+  padding-left: 1.25em;
+}
+.prose-chat li {
+  margin: 0.1em 0;
+}
+.prose-chat blockquote {
+  border-left: 2px solid currentColor;
+  padding-left: 0.75em;
+  margin: 0.4em 0;
+  opacity: 0.85;
 }

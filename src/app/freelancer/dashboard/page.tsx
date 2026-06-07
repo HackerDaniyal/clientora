@@ -146,13 +146,13 @@ export default async function FreelancerDashboard() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`badge text-[9px] ${
+                    className={`badge ${
                       workspace.status === "active"
                         ? "badge-success"
                         : workspace.status === "review"
                           ? "badge-info"
                           : workspace.status === "completed"
-                            ? "bg-purple-100 text-purple-700"
+                            ? "badge-purple"
                             : "badge-neutral"
                     }`}
                   >
@@ -189,7 +189,7 @@ export default async function FreelancerDashboard() {
                     Linked on {new Date(link.created_at).toLocaleDateString()}
                   </p>
                 </div>
-                <span className="badge bg-brand-accent/20 text-brand-accent text-[9px]">Active</span>
+                <span className="badge badge-accent">Active</span>
               </div>
             ))}
           </div>

@@ -82,8 +82,9 @@ export async function sendInviteEmail({
 
     console.log('[EMAIL] Sent successfully:', info.messageId);
     return { success: true, id: info.messageId };
-  } catch (error: any) {
-    console.error('[EMAIL] Failed to send:', error.message);
-    return { error: error.message };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    console.error('[EMAIL] Failed to send:', msg);
+    return { error: msg };
   }
 }

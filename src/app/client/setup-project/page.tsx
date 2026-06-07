@@ -799,8 +799,8 @@ export default function SetupProjectPage() {
               <p className="text-lg font-medium text-brand-dark">{formData.project_name || "Untitled"}</p>
               <p className="text-[13px] text-text-secondary mt-1">{formData.description || "No description"}</p>
               <div className="flex gap-4 mt-2">
-                <span className="badge bg-brand-accent/20 text-brand-accent text-[10px]">{formData.project_type}</span>
-                <span className="badge bg-brand-light/50 text-text-secondary text-[10px]">{formData.budget_range || "Budget not set"}</span>
+                <span className="badge badge-accent">{formData.project_type}</span>
+                <span className="badge badge-neutral">{formData.budget_range || "Budget not set"}</span>
               </div>
             </div>
 
@@ -846,7 +846,7 @@ export default function SetupProjectPage() {
                 <p className="text-[11px] text-text-tertiary uppercase mb-2">Platforms</p>
                 <div className="flex gap-2">
                   {formData.platforms.map(p => (
-                    <span key={p} className="badge bg-brand-dark text-white text-[10px]">{p}</span>
+                    <span key={p} className="badge badge-dark">{p}</span>
                   ))}
                 </div>
               </div>

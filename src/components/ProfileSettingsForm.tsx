@@ -23,7 +23,7 @@ type ProfileData = {
 };
 
 /* ───────── Toast helper ───────── */
-function Toast({ toast, onClose, onUndo }: {
+function Toast({ toast, onClose }: {
   toast: { message: string; type: "success" | "error" | "info"; onUndo?: () => void } | null;
   onClose: () => void;
   onUndo?: () => void;
@@ -52,7 +52,7 @@ function AvatarSection({ profile, onAvatarChange }: { profile: ProfileData; onAv
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
-  const [showToast, setShowToast] = useState<any>(null);
+  const [showToast, setShowToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   const initials = (profile.full_name || "U").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 
@@ -72,8 +72,9 @@ function AvatarSection({ profile, onAvatarChange }: { profile: ProfileData; onAv
       const result = await uploadAvatar(fd);
       if (result.avatarUrl) onAvatarChange(result.avatarUrl);
       setShowToast({ message: "Avatar updated!", type: "success" });
-    } catch (err: any) {
-      setShowToast({ message: err.message || "Upload failed", type: "error" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Upload failed";
+      setShowToast({ message: msg, type: "error" });
       setPreview(null);
     }
     setUploading(false);
@@ -117,7 +118,7 @@ function AvatarSection({ profile, onAvatarChange }: { profile: ProfileData; onAv
 
 /* ───────── Input Field ───────── */
 function Field({ icon: Icon, label, name, defaultValue, placeholder, type = "text", multiline = false }: {
-  icon: any; label: string; name: string; defaultValue?: string | null; placeholder?: string; type?: string; multiline?: boolean;
+  icon: React.ElementType; label: string; name: string; defaultValue?: string | null; placeholder?: string; type?: string; multiline?: boolean;
 }) {
   const base = "w-full bg-brand-surface border border-brand-light rounded-lg pl-10 pr-4 py-2.5 text-[13px] text-brand-dark outline-none focus:border-brand-accent transition-colors";
   return (
@@ -139,7 +140,7 @@ function Field({ icon: Icon, label, name, defaultValue, placeholder, type = "tex
 }
 
 /* ───────── Read-Only Info ───────── */
-function ReadOnlyField({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+function ReadOnlyField({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
   return (
     <div>
       <label className="text-[12px] font-medium text-text-secondary mb-1.5 block">{label}</label>
@@ -172,8 +173,9 @@ export default function ProfileSettingsForm({ profile }: { profile: ProfileData 
       try {
         await updateProfile(fd);
         showToast("Profile saved successfully!", "success");
-      } catch (e: any) {
-        showToast(e.message || "Save failed", "error");
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "Save failed";
+        showToast(msg, "error");
       }
     });
   };
@@ -188,8 +190,9 @@ export default function ProfileSettingsForm({ profile }: { profile: ProfileData 
       setShowPw(false);
       setShowPwConfirm(false);
       e.currentTarget.reset();
-    } catch (err: any) {
-      showToast(err.message || "Failed to change password", "error");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to change password";
+      showToast(msg, "error");
     }
     setPwPending(false);
   };

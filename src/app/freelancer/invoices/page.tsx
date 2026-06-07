@@ -52,11 +52,11 @@ export default async function FreelancerInvoices() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-[16px] font-semibold text-brand-dark">${invoice.amount || 0}</span>
-                  <span className={`badge text-[11px] ${
-                    invoice.status === 'draft' ? 'bg-gray-100 text-gray-700' :
-                    invoice.status === 'sent' ? 'bg-blue-100 text-blue-700' :
-                    invoice.status === 'paid' ? 'bg-green-100 text-green-700' :
-                    'bg-gray-100 text-gray-700'
+                  <span className={`badge ${
+                    invoice.status === 'draft' ? 'badge-neutral' :
+                    invoice.status === 'sent' ? 'badge-info' :
+                    invoice.status === 'paid' ? 'badge-success' :
+                    'badge-neutral'
                   }`}>
                     {invoice.status}
                   </span>
