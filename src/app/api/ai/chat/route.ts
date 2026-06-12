@@ -2,6 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
 
+// Simple in-memory rate limiting
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_MAX_REQUESTS = 20; // Max 20 requests per minute
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute window
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const userLimit = rateLimitMap.get(userId);
+
+  if (!userLimit || now > userLimit.resetTime) {
+    // Reset or create new limit
+    rateLimitMap.set(userId, {
+      count: 1,
+      resetTime: now + RATE_LIMIT_WINDOW_MS,
+    });
+    return true;
+  }
+
+  if (userLimit.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false; // Rate limit exceeded
+  }
+
+  userLimit.count++;
+  return true;
+}
+
 const FALLBACK = (message: string, userRole: string, workspaceContext: string) => {
   if (workspaceContext) {
     return `(${userRole}) I received your message about "${message.slice(0, 80)}". Context: ${workspaceContext}. Configure GEMINI_API_KEY for full AI responses.`;
@@ -193,6 +219,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Check rate limit
+    if (!checkRateLimit(user.id)) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please wait a moment before trying again." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { message, workspaceId, userRole } = body as {
       message: string;
@@ -222,32 +256,67 @@ export async function POST(req: NextRequest) {
     let response: string;
 
     const apiKey = process.env.GEMINI_API_KEY;
+    console.log("GEMINI_API_KEY exists:", !!apiKey);
+    
     if (apiKey) {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        // Use Gemini 2.5 Flash for fast performance and better reasoning
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-      const historyText = (history ?? [])
-        .reverse()
-        .map((h: { role: string; content: string }) => `${h.role}: ${h.content}`)
-        .join("\n");
+        const historyText = (history ?? [])
+          .reverse()
+          .map((h: { role: string; content: string }) => `${h.role}: ${h.content}`)
+          .join("\n");
 
-      const prompt = `You are ClientFlow CRM assistant for a ${role}.
-You help with project management, proposals, invoices, contracts, client communication, and task tracking.
-Be concise and helpful. Use the workspace context below to give informed, specific answers.
-Do NOT invent private data about other users that isn't in the context.
+        const systemPrompt = role === "freelancer" || role === "member"
+          ? `You are the dedicated AI Assistant embedded inside "Clientora", a niche CRM built for freelance developers, web designers, and agency owners. Your job is to act as a brilliant business partner to the Freelancer and a supportive, transparent guide to the Client.
 
-${workspaceContext ? `--- WORKSPACE CONTEXT ---\n${workspaceContext}\n--- END CONTEXT ---` : "(No workspace selected)"}
+CRITICAL RULE: You must ONLY speak using facts present in the provided context below. If information is missing (e.g., a deadline isn't set yet), acknowledge it honestly and help the user figure it out—do not hallucinate data.
 
---- RECENT AI CONVERSATION ---
-${historyText || "(No prior conversation)"}
---- END CONVERSATION ---
+ROLE-SPECIFIC GUIDELINES (Freelancer/Member):
+- Your tone is professional, highly strategic, efficient, and entrepreneurial.
+- Your goals: Help draft professional proposals/contracts, calculate invoice breakdowns, summarize long chat feeds, suggest sub-tasks for To-Dos, and analyze project scopes.
+- Privacy Guard: NEVER leak private freelancer data, internal pipeline stages, private notes, or other clients' information to the Client portal.
 
-User: ${message}
+OUTPUT FORMATTING RULES:
+1. Keep responses highly scannable. Use Markdown bullet points, bold key terms, and small tables when breaking down pricing or task lists.
+2. For code fragments or configuration text, always format using markdown triple backticks.
+3. Be conversational but concise. Do not talk in massive paragraphs.`
+          : `You are the dedicated AI Assistant embedded inside "Clientora", a niche CRM built for freelance developers, web designers, and agency owners. Your job is to act as a brilliant business partner to the Freelancer and a supportive, transparent guide to the Client.
 
-Reply concisely and helpfully. If the user asks about the workspace, use the context above to give specific, accurate answers.`;
+CRITICAL RULE: You must ONLY speak using facts present in the provided context below. If information is missing (e.g., a deadline isn't set yet), acknowledge it honestly and help the user figure it out—do not hallucinate data.
 
-      const result = await model.generateContent(prompt);
-      response = result.response.text();
+ROLE-SPECIFIC GUIDELINES (Client):
+- Your tone is helpful, reassuring, clear, and plain-English (no complex legal jargon).
+- Your goals: Translate complex contract terms into easy-to-understand explanations, clarify invoice items, summarize progress based on the visually active milestones, and help them draft clear feedback for the freelancer.
+- Privacy Guard: You do not know about other workspaces, the freelancer's pipeline metrics, or financial tools. You only know what this client has submitted and received.
+
+OUTPUT FORMATTING RULES:
+1. Keep responses highly scannable. Use Markdown bullet points, bold key terms, and small tables when breaking down pricing or task lists.
+2. For code fragments or configuration text, always format using markdown triple backticks.
+3. Be conversational but concise. Do not talk in massive paragraphs.`;
+
+        const prompt = `${systemPrompt}
+
+${workspaceContext ? `--- CURRENT WORKSPACE CONTEXT ---\n${workspaceContext}\n--- END CONTEXT ---` : "(No workspace selected)"}
+
+${historyText ? `--- RECENT CONVERSATION HISTORY ---\n${historyText}\n--- END HISTORY ---` : ""}
+
+User message: ${message}
+
+Provide a helpful, concise response. If referring to workspace data, be specific and accurate.`;
+
+        const result = await model.generateContent(prompt);
+        response = result.response.text();
+        
+        if (!response || response.trim().length === 0) {
+          response = "I apologize, but I couldn't generate a response. Please try again.";
+        }
+      } catch (error) {
+        console.error("Gemini API error:", error);
+        response = `I encountered an error connecting to the AI service. Error: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your API key configuration.`;
+      }
     } else {
       response = FALLBACK(message, role, workspaceContext);
     }
