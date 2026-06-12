@@ -24,7 +24,6 @@ import {
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import GlobalSearch from "@/components/GlobalSearch";
-import ThemeToggle from "@/components/ThemeToggle";
 
 type SidebarProps = {
   role: "freelancer" | "client" | "admin";
@@ -98,10 +97,10 @@ export default function Sidebar({ role }: SidebarProps) {
       {/* Mobile hamburger button — visible only on small screens */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-3 left-3 z-50 p-2 rounded-lg bg-brand-surface dark:bg-[#111] border border-brand-light dark:border-[#2A2A2A] shadow-sm"
+        className="md:hidden fixed top-3 left-3 z-50 p-2 rounded-lg bg-brand-surface border border-brand-light shadow-sm"
         aria-label="Open navigation menu"
       >
-        <IconMenu2 size={20} className="text-brand-dark dark:text-brand-light" />
+        <IconMenu2 size={20} className="text-brand-dark" />
       </button>
 
       {/* Mobile overlay */}
@@ -114,7 +113,7 @@ export default function Sidebar({ role }: SidebarProps) {
 
       <aside
         className={cn(
-          "w-[160px] h-screen bg-brand-surface dark:bg-[#111] border-r border-brand-light dark:border-[#2A2A2A] flex flex-col shrink-0",
+          "w-[160px] h-screen bg-brand-surface border-r border-brand-light flex flex-col shrink-0",
           // Mobile: off-canvas drawer
           "fixed md:relative z-50 transition-transform duration-200",
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
@@ -130,14 +129,14 @@ export default function Sidebar({ role }: SidebarProps) {
             <div className="w-[5px] h-2 bg-brand-accent rounded-[1px] opacity-60"></div>
           </div>
         </div>
-        <span className="text-[14px] font-medium text-brand-dark dark:text-brand-light tracking-tight uppercase">
+        <span className="text-[14px] font-medium text-brand-dark tracking-tight uppercase">
           ClientFlow
         </span>
       </div>
 
       {/* Global Search */}
       {role === "freelancer" && (
-        <div className="px-3 mt-1">
+        <div className="px-3 mt-2 mb-2">
           <GlobalSearch />
         </div>
       )}
@@ -153,11 +152,11 @@ export default function Sidebar({ role }: SidebarProps) {
               className={cn(
                 "flex items-center gap-2 px-[10px] py-[6px] rounded-small text-[13px] transition-colors group",
                 isActive 
-                  ? "bg-brand-dark dark:bg-brand-accent text-white dark:text-brand-dark" 
-                  : "text-text-secondary hover:bg-brand-light/30 dark:hover:bg-white/10"
+                  ? "bg-brand-dark text-white" 
+                  : "text-text-secondary hover:bg-brand-light/30"
               )}
             >
-              <item.icon size={16} stroke={2} className={cn(isActive ? "text-white dark:text-brand-dark" : "text-text-secondary")} />
+              <item.icon size={16} stroke={2} className={cn(isActive ? "text-white" : "text-text-secondary")} />
               <span className="flex-1">{item.label}</span>
               {item.hasSubmenu && (
                 <IconChevronDown size={12} stroke={2} className={cn(isActive ? "text-white" : "text-text-tertiary")} />
@@ -174,12 +173,7 @@ export default function Sidebar({ role }: SidebarProps) {
 
       {/* AI Assistant CTA at bottom */}
       <div className="p-4 mt-auto space-y-3">
-        {/* Theme toggle */}
-        <div className="flex justify-center">
-          <ThemeToggle />
-        </div>
-
-        <div className="bg-[#8BC38A22] dark:bg-brand-accent/10 border-[0.5px] border-brand-accent rounded-medium p-3 flex flex-col gap-2 items-center text-center">
+        <div className="bg-[#8BC38A22] border-[0.5px] border-brand-accent rounded-medium p-3 flex flex-col gap-2 items-center text-center">
           <IconSparkles size={18} stroke={2} className="text-brand-dark" />
           <span className="text-[11px] font-medium text-brand-dark">Need help?</span>
           <button

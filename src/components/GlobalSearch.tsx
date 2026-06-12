@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import {
   IconSearch,
   IconX,
@@ -46,8 +47,13 @@ export default function GlobalSearch() {
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Flatten results for keyboard navigation
   const flatResults: FlatResult[] = React.useMemo(() => {
@@ -153,10 +159,10 @@ export default function GlobalSearch() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-brand-light/40 bg-white/60 text-text-tertiary text-[12px] hover:border-brand-accent/40 hover:text-text-secondary transition-colors w-full"
+        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-brand-light/40 bg-white text-text-tertiary text-[13px] hover:border-brand-accent/40 hover:text-text-secondary transition-colors w-full"
         aria-label="Search (Ctrl+K)"
       >
-        <IconSearch size={14} />
+        <IconSearch size={16} />
         <span className="flex-1 text-left">Search...</span>
         <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-brand-light/50 bg-brand-surface text-text-tertiary">
           ⌘K
@@ -165,7 +171,9 @@ export default function GlobalSearch() {
     );
   }
 
-  return (
+  if (!mounted) return null;
+
+  const modalContent = (
     <>
       {/* Backdrop */}
       <div
@@ -174,8 +182,8 @@ export default function GlobalSearch() {
       />
 
       {/* Modal */}
-      <div className="fixed inset-x-0 top-[10vh] mx-auto max-w-lg z-[9999] px-4">
-        <div className="bg-white rounded-2xl shadow-2xl border border-brand-light/40 overflow-hidden">
+      <div className="fixed inset-0 flex items-start justify-center pt-[15vh] z-[10000] px-4 pointer-events-none">
+        <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-brand-light/40 overflow-hidden pointer-events-auto relative">
           {/* Search input */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-brand-light/30">
             <IconSearch size={18} className="text-text-tertiary shrink-0" />
@@ -255,4 +263,6 @@ export default function GlobalSearch() {
       </div>
     </>
   );
+
+  return createPortal(modalContent, document.body);
 }

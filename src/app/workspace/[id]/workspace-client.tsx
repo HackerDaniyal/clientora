@@ -799,7 +799,7 @@ export default function WorkspaceClient({
   return (
     <div className="min-h-screen bg-brand-surface">
       {/* Header */}
-      <div className="bg-white dark:bg-[#1A1A1A] border-b border-brand-light/50 dark:border-[#2A2A2A]/50">
+      <div className="bg-white border-b border-brand-light/50">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -823,7 +823,7 @@ export default function WorkspaceClient({
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white dark:bg-[#1A1A1A] border-b border-brand-light/50 dark:border-[#2A2A2A]/50">
+      <div className="bg-white border-b border-brand-light/50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex gap-1 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {

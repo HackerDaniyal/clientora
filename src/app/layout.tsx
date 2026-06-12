@@ -27,15 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{if(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch{}`,
-          }}
-        />
-      </head>
-      <body className={`${dmSans.variable} ${plusJakarta.variable} antialiased font-sans bg-white dark:bg-[#111] text-text-primary dark:text-[#E8E8E8]`}>
+    <html lang="en">
+      <body className={`${dmSans.variable} ${plusJakarta.variable} antialiased font-sans bg-white text-text-primary`}>
         <a href="#main-content" className="skip-to-content">Skip to content</a>
         <ToastProvider>
           <ErrorBoundary><div id="main-content" role="main">{children}</div></ErrorBoundary>

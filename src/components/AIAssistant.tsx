@@ -518,7 +518,7 @@ export default function AIAssistant({ userRole, workspaceId: propWorkspaceId }: 
 
       {/* Chat Drawer */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[400px] max-w-[calc(100vw-32px)] h-[600px] max-h-[calc(100vh-120px)] bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-2xl border border-brand-light dark:border-[#2A2A2A] flex flex-col overflow-hidden animate-fade-in">
+        <div className="fixed bottom-24 right-6 z-50 w-[400px] max-w-[calc(100vw-32px)] h-[600px] max-h-[calc(100vh-120px)] bg-white rounded-2xl shadow-2xl border border-brand-light flex flex-col overflow-hidden animate-fade-in">
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-brand-light bg-gradient-to-r from-purple-50 to-brand-light">
             <div className="flex items-center gap-3">
