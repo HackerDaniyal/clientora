@@ -135,6 +135,7 @@ export default function ProfileSettingsForm({ profile }: { profile: ProfileData 
   const [pwPending, setPwPending] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [showPwConfirm, setShowPwConfirm] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
   const { showToast } = useToast();
 
   const handleSave = (fd: FormData) => {
@@ -171,8 +172,6 @@ export default function ProfileSettingsForm({ profile }: { profile: ProfileData 
 
   return (
     <>
-      <Toast toast={toast} onClose={() => setToast(null)} />
-
       <div className="space-y-8">
         {/* ─── Avatar + Quick Info Header ─── */}
         <div className="card bg-white p-6">
