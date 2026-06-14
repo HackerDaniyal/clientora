@@ -14,6 +14,7 @@ import {
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { signup } from "@/app/auth/actions";
+import OAuthButtons from "@/components/auth/OAuthButtons";
 
 const roleOptions = [
   {
@@ -172,6 +173,10 @@ export default function SignupPage({
                       );
                     })}
                   </div>
+                </div>
+
+                <div className="pt-2">
+                  <OAuthButtons role={role} />
                 </div>
 
                 <div className="grid gap-4">

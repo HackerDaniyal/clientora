@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { IconArrowRight, IconAlertCircle, IconCircleCheck } from "@tabler/icons-react";
 import { login } from "@/app/auth/actions";
+import OAuthButtons from "@/components/auth/OAuthButtons";
 
 export default function LoginPage({
   searchParams,
@@ -43,6 +44,8 @@ export default function LoginPage({
         )}
 
         <form action={login} className="card space-y-4 shadow-sm bg-white">
+          <OAuthButtons next={redirect || "/"} />
+          
           {redirect && <input type="hidden" name="redirect" value={redirect} />}
           <div className="space-y-1">
             <label htmlFor="email" className="text-[11px] font-medium text-text-secondary uppercase tracking-wider">Email Address</label>

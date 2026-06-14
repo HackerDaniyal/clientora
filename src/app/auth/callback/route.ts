@@ -8,6 +8,7 @@ export async function GET(request: Request) {
   const next = searchParams.get('next') ?? '/'
   const error = searchParams.get('error')
   const errorDescription = searchParams.get('error_description')
+  const roleParam = searchParams.get('role')
 
   // Handle error from Supabase (e.g., expired link, invalid token)
   if (error) {
@@ -27,12 +28,31 @@ export async function GET(request: Request) {
         .eq('id', user.id)
         .single()
 
-      const role =
+      let role =
         normalizeRole(profile?.role) ||
         normalizeRole(user.user_metadata?.role as string | undefined)
 
+      // If no role in profile, but we got one from the OAuth signup flow
+      if (!role && roleParam) {
+        role = normalizeRole(roleParam)
+        if (role) {
+          // Update profile with the new role
+          await supabase.from('profiles').upsert(
+            { id: user.id, role: role, full_name: user.user_metadata?.full_name || user.user_metadata?.name || 'User' },
+            { onConflict: 'id' }
+          )
+        }
+      }
+
+      // If still no role, and no profile exists, maybe it's a new login without role. Default to freelancer or show error.
+      // We will ask them to signup properly or we can default to freelancer.
       if (!role) {
-        return NextResponse.redirect(`${origin}/auth/signup?error=${encodeURIComponent('Account role not found. Please sign up again and choose Client or Freelancer.')}`)
+        // Let's create a default profile as freelancer if it doesn't exist
+        role = 'freelancer'
+        await supabase.from('profiles').upsert(
+          { id: user.id, role: role, full_name: user.user_metadata?.full_name || user.user_metadata?.name || 'User' },
+          { onConflict: 'id' }
+        )
       }
 
       const forwardTo = next !== '/' && next.startsWith(`/${role}`) ? next : dashboardPath(role)
