@@ -52,12 +52,12 @@ export default async function FreelancerDashboard() {
 
   return (
     <div className="space-y-8">
-      <header className="flex justify-between items-center">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-medium text-brand-dark">Freelancer Dashboard</h1>
           <p className="text-sm text-text-secondary">Welcome back, here&apos;s what&apos;s happening today.</p>
         </div>
-        <Link href="/freelancer/referrals" className="pill-btn">
+        <Link href="/freelancer/referrals" className="pill-btn w-full sm:w-auto justify-center">
           <IconPlus size={16} stroke={2} />
           Generate Referral Code
         </Link>

@@ -2,6 +2,7 @@ import React from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { IconUsers, IconBriefcase, IconUserCheck, IconClock } from "@tabler/icons-react";
+import AdminCharts from "./admin-charts";
 
 export default async function AdminDashboard() {
   const supabase = createClient();
@@ -64,6 +65,44 @@ export default async function AdminDashboard() {
     { label: "Pending Requests", value: pendingRequests || 0, icon: IconClock, color: "bg-amber-100 text-amber-600" },
   ];
 
+  // Prepare chart data
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const { data: recentProfiles } = await supabase
+    .from("profiles")
+    .select("created_at")
+    .gte("created_at", thirtyDaysAgo.toISOString())
+    .order("created_at", { ascending: true });
+
+  const signupsData: { date: string; count: number }[] = [];
+  const now = new Date();
+  for (let d = new Date(thirtyDaysAgo); d <= now; d.setDate(d.getDate() + 1)) {
+    const dayStr = d.toISOString().split("T")[0];
+    const count = recentProfiles?.filter((p) => p.created_at.startsWith(dayStr)).length || 0;
+    signupsData.push({
+      date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      count,
+    });
+  }
+
+  const { data: requests } = await supabase
+    .from("project_requests")
+    .select("status");
+
+  const reqStatusCounts = (requests || []).reduce((acc: any, req) => {
+    acc[req.status] = (acc[req.status] || 0) + 1;
+    return acc;
+  }, {});
+
+  const requestsData = [
+    { status: "accepted", count: reqStatusCounts["accepted"] || 0, color: "var(--color-status-success)" },
+    { status: "pending", count: reqStatusCounts["pending"] || 0, color: "var(--color-status-warning)" },
+    { status: "rejected", count: reqStatusCounts["rejected"] || 0, color: "var(--color-status-danger)" },
+    { status: "info_needed", count: reqStatusCounts["info_needed"] || 0, color: "var(--color-status-pending)" }, // Assuming pending color
+  ].filter(d => d.count > 0 || d.status === "accepted" || d.status === "pending" || d.status === "rejected");
+
+
   return (
     <div className="space-y-8">
       <header>
@@ -86,6 +125,8 @@ export default async function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      <AdminCharts signupsData={signupsData} requestsData={requestsData} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card bg-white">

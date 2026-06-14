@@ -186,6 +186,18 @@ export default async function WorkspacePage({ params }: { params: { id: string }
     // time_logs table may not exist yet
   }
 
+  let review: any = null;
+  try {
+    const { data: rev } = await supabase
+      .from("workspace_reviews")
+      .select("*")
+      .eq("workspace_id", params.id)
+      .single();
+    review = rev;
+  } catch {
+    // workspace_reviews may not exist
+  }
+
   return (
     <Suspense
       fallback={
@@ -202,6 +214,7 @@ export default async function WorkspacePage({ params }: { params: { id: string }
         activityLog={activityLog || []}
         documents={documents || []}
         timeLogs={timeLogs}
+        review={review}
         userRole={memberRole}
         workspaceId={params.id}
         currentUserId={user.id}

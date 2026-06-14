@@ -43,7 +43,7 @@ import {
 import { createClient } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
-import { createTask, toggleTask, updateTask, deleteTask, reorderTasks, addTaskComment, deleteTaskComment, inviteMember, removeMember, changeMemberRole, createDocument, updateDocument, sendDocument, deleteDocument, updateWorkspaceAssets, sendAssetsToFreelancer, markAsPaid, acceptProposal, counterOfferProposal } from "./actions";
+import { createTask, toggleTask, updateTask, deleteTask, reorderTasks, addTaskComment, deleteTaskComment, inviteMember, removeMember, changeMemberRole, createDocument, updateDocument, sendDocument, deleteDocument, updateWorkspaceAssets, sendAssetsToFreelancer, markAsPaid, acceptProposal, counterOfferProposal, submitWorkspaceReview } from "./actions";
 import WorkspaceChat, { type ChatMessage } from "@/components/workspace/WorkspaceChat";
 import TimeTracker from "@/components/workspace/TimeTracker";
 import DocumentEditor from "@/components/documents/DocumentEditor";
@@ -64,6 +64,7 @@ interface WorkspaceClientProps {
   workspaceId: string;
   documents?: any[];
   timeLogs?: any[];
+  review?: any;
   currentUserId: string;
   accountRole: string;
   canCreateTasks: boolean;
@@ -82,6 +83,7 @@ export default function WorkspaceClient({
   workspaceId,
   documents: initialDocuments = [],
   timeLogs: initialTimeLogs = [],
+  review: initialReview = null,
   currentUserId,
   accountRole,
   canCreateTasks,
@@ -112,6 +114,10 @@ export default function WorkspaceClient({
   const [taskMenuOpen, setTaskMenuOpen] = useState<string | null>(null);
   const [commentTaskId, setCommentTaskId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
+  const [review, setReview] = useState(initialReview);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("viewer");
   const [loading, setLoading] = useState(false);
@@ -181,6 +187,12 @@ export default function WorkspaceClient({
     }, 2000);
     return () => clearInterval(timer);
   }, [assetUploading]);
+
+  useEffect(() => {
+    if (workspaceData?.status === 'completed' && accountRole === 'client' && !review) {
+      setShowReviewModal(true);
+    }
+  }, [workspaceData?.status, accountRole, review]);
 
   // Merge server-side assets with locally uploaded ones
   const mergedAssets: { label: string; files: AssetFile[] }[] = (() => {
@@ -646,6 +658,28 @@ export default function WorkspaceClient({
     }
   };
 
+  const handleSubmitReview = async () => {
+    if (reviewRating < 1 || reviewRating > 5) {
+      showToast('Please select a rating', 'error');
+      return;
+    }
+    if (!reviewComment.trim()) {
+      showToast('Please enter a comment', 'error');
+      return;
+    }
+    try {
+      setLoading(true);
+      await submitWorkspaceReview(workspaceId, reviewRating, reviewComment);
+      setReview({ rating: reviewRating, comment: reviewComment });
+      setShowReviewModal(false);
+      showToast('Review submitted successfully', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to submit review', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Workspace participants for assignee selector
   const assigneeOptions = useMemo(() => {
     const opts: { id: string; name: string }[] = [];
@@ -815,8 +849,20 @@ export default function WorkspaceClient({
                 <p className="text-sm text-text-secondary">{workspaceData.project_type}</p>
               </div>
             </div>
-            <div className={getStatusBadge(workspaceData.status)}>
-              {workspaceData.status}
+            <div className="flex items-center gap-3">
+              {review && (
+                <div className="flex items-center gap-1 text-amber-400 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <svg key={i} className={`w-4 h-4 ${i < review.rating ? 'fill-current' : 'text-amber-200 fill-current'}`} viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                  <span className="text-amber-700 font-medium text-[12px] ml-1">{review.rating}.0</span>
+                </div>
+              )}
+              <div className={getStatusBadge(workspaceData.status)}>
+                {workspaceData.status}
+              </div>
             </div>
           </div>
         </div>
@@ -1732,7 +1778,7 @@ export default function WorkspaceClient({
                 <p className="text-text-secondary text-center py-8">No documents yet. {userRole === 'editor' && accountRole !== 'client' && 'Create one above!'}</p>
               ) : (
                 <div className="space-y-3">
-                  {documents.map((doc) => (
+                  {documents.map((doc: any) => (
                     <div key={doc.id} className="flex items-center justify-between p-4 rounded-lg border border-brand-light/50 hover:border-brand-accent transition-colors">
                       <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -2149,7 +2195,7 @@ export default function WorkspaceClient({
           clientName={workspaceData.client?.full_name}
           freelancerName={workspaceData.freelancer?.full_name}
           freelancerEmail={undefined}
-          initialData={editingDocumentId ? documents.find(d => d.id === editingDocumentId)?.content : null}
+          initialData={editingDocumentId ? documents.find((d: any) => d.id === editingDocumentId)?.content : null}
           onSave={async (docType, title, content) => {
             if (editingDocumentId) {
               await updateDocument(
@@ -2175,6 +2221,66 @@ export default function WorkspaceClient({
           }}
           onClose={() => { setShowDocEditor(false); setEditingDocumentId(null); }}
         />
+      )}
+
+      {/* Client Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold text-brand-dark">Project Completed!</h3>
+              <button onClick={() => setShowReviewModal(false)} className="text-text-secondary hover:text-brand-dark">
+                <IconX size={20} />
+              </button>
+            </div>
+            <p className="text-[14px] text-text-secondary mb-6">
+              Your workspace has been marked as completed. Please take a moment to leave a review for your freelancer.
+            </p>
+            <div className="space-y-6">
+              <div>
+                <label className="text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2 block">Rating</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setReviewRating(star)}
+                      className="focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent rounded-sm"
+                    >
+                      <svg className={`w-8 h-8 ${star <= reviewRating ? 'text-amber-400 fill-current' : 'text-gray-200 fill-current'}`} viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2 block">Your Review</label>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Share your experience working on this project..."
+                  rows={4}
+                  className="w-full bg-brand-surface border border-brand-light rounded-lg px-4 py-3 text-[14px] outline-none focus:border-brand-accent resize-none"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleSubmitReview}
+                  disabled={loading || !reviewComment.trim()}
+                  className="flex-1 pill-btn bg-brand-dark text-white disabled:opacity-50"
+                >
+                  {loading ? "Submitting..." : "Submit Review"}
+                </button>
+                <button
+                  onClick={() => setShowReviewModal(false)}
+                  className="pill-btn-outline"
+                >
+                  Skip for now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

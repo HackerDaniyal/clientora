@@ -1160,3 +1160,49 @@ export async function deleteTimeLog(logId: string) {
     throw new Error('Failed to delete time entry')
   }
 }
+
+export async function submitWorkspaceReview(workspaceId: string, rating: number, comment: string) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  // Get workspace
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('client_id, freelancer_id')
+    .eq('id', workspaceId)
+    .single()
+
+  if (!workspace || workspace.client_id !== user.id) {
+    throw new Error('Only the client can submit a review')
+  }
+
+  // Insert review
+  const { error } = await supabase
+    .from('workspace_reviews')
+    .insert({
+      workspace_id: workspaceId,
+      client_id: workspace.client_id,
+      freelancer_id: workspace.freelancer_id,
+      rating,
+      comment
+    })
+
+  if (error) {
+    console.error('Error submitting review:', error)
+    throw new Error('Failed to submit review')
+  }
+
+  // Log activity
+  await supabase
+    .from('activity_log')
+    .insert({
+      workspace_id: workspaceId,
+      user_id: user.id,
+      action: 'submitted a workspace review',
+      entity_type: 'review',
+      entity_id: workspaceId
+    })
+
+  revalidatePath(`/workspace/${workspaceId}`)
+}

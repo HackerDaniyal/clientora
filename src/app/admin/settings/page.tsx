@@ -1,7 +1,8 @@
 import React from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import ProfileSettingsForm from "@/components/ProfileSettingsForm";
+import SettingsClient from "./settings-client";
+import { getPlatformSettings } from "./actions";
 
 export default async function AdminSettings() {
   const supabase = createClient();
@@ -30,14 +31,16 @@ export default async function AdminSettings() {
     created_at: profile?.created_at || user.created_at || "",
   };
 
+  const platformSettings = await getPlatformSettings();
+
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
       <header>
-        <h1 className="text-2xl font-medium text-brand-dark">Settings</h1>
-        <p className="text-sm text-text-secondary">Manage your profile and account preferences.</p>
+        <h1 className="text-2xl font-medium text-brand-dark">Platform Settings</h1>
+        <p className="text-sm text-text-secondary">Manage platform configuration and your admin profile.</p>
       </header>
 
-      <ProfileSettingsForm profile={profileData} />
+      <SettingsClient profileData={profileData} initialSettings={platformSettings} />
     </div>
   );
 }

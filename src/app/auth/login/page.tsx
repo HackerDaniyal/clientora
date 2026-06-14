@@ -46,10 +46,10 @@ export default function LoginPage({
           {redirect && <input type="hidden" name="redirect" value={redirect} />}
           <div className="space-y-1">
             <label htmlFor="email" className="text-[11px] font-medium text-text-secondary uppercase tracking-wider">Email Address</label>
-            <input 
+            <input
               id="email"
               name="email"
-              type="email" 
+              type="email"
               required
               placeholder="name@example.com"
               className="w-full bg-brand-surface border-[0.5px] border-brand-light rounded-medium px-4 py-2.5 text-[13px] outline-none focus:border-brand-accent transition-colors"
@@ -60,16 +60,16 @@ export default function LoginPage({
               <label htmlFor="password" className="text-[11px] font-medium text-text-secondary uppercase tracking-wider">Password</label>
               <Link href="/auth/forgot-password" className="text-[10px] text-brand-dark underline opacity-70">Forgot password?</Link>
             </div>
-            <input 
+            <input
               id="password"
               name="password"
-              type="password" 
+              type="password"
               required
               placeholder="••••••••"
               className="w-full bg-brand-surface border-[0.5px] border-brand-light rounded-medium px-4 py-2.5 text-[13px] outline-none focus:border-brand-accent transition-colors"
             />
           </div>
-          
+
           <div className="pt-2">
             <button
               type="submit"

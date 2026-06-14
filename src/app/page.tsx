@@ -337,9 +337,8 @@ export default function LandingPage() {
                   {["SM", "JC", "AK", "RL"].map((initials, i) => (
                     <div
                       key={initials}
-                      className={`w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold text-white ${
-                        ["bg-brand-mid", "bg-brand-accent", "bg-brand-green", "bg-brand-dark"][i]
-                      }`}
+                      className={`w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold text-white ${["bg-brand-mid", "bg-brand-accent", "bg-brand-green", "bg-brand-dark"][i]
+                        }`}
                     >
                       {initials}
                     </div>
