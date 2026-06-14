@@ -7,7 +7,7 @@ import {
   IconFileTypeDoc,
   IconFileTypePdf,
   IconDeviceFloppy,
-  IconPlus,
+  IconPlus, 
   IconTrash,
   IconChevronDown,
   IconChevronRight,

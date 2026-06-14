@@ -85,8 +85,9 @@ export async function middleware(request: NextRequest) {
   }
 
   const cachedRole = normalizeRole(request.cookies.get('app_role')?.value)
+  const isStrictAdminRoute = pathname.startsWith('/admin')
 
-  let userRole = cachedRole
+  let userRole = isStrictAdminRoute ? null : cachedRole
 
   if (!userRole) {
     const { data: profile } = await supabase
@@ -95,11 +96,14 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .maybeSingle()
 
-    userRole =
-      normalizeRole(profile?.role) ||
-      normalizeRole(user.user_metadata?.role as string | undefined)
+    const dbRole = normalizeRole(profile?.role)
+    const metaRole = normalizeRole(user.user_metadata?.role as string | undefined)
 
-    if (userRole) {
+    // Critical Security Fix: Never fallback to 'admin' from user_metadata
+    userRole = dbRole || (metaRole === 'admin' ? null : metaRole)
+
+    // Cache the role in cookies (unless we're explicitly bypassing it for strict admin checks)
+    if (userRole && !isStrictAdminRoute) {
       response.cookies.set('app_role', userRole, {
         path: '/',
         maxAge: 60 * 60,

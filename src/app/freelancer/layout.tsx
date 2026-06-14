@@ -1,6 +1,7 @@
 import React from "react";
 import Sidebar from "@/components/Sidebar";
 import AIAssistant from "@/components/AIAssistantLazy";
+import DeadlineReminderChecker from "@/components/DeadlineReminderChecker";
 import { requireRole } from "@/lib/auth/require-role";
 
 export default async function FreelancerLayout({
@@ -17,6 +18,8 @@ export default async function FreelancerLayout({
         {children}
       </main>
       <AIAssistant userRole="freelancer" />
+      <DeadlineReminderChecker />
     </div>
   );
 }
+

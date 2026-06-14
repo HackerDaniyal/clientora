@@ -21,6 +21,7 @@ import {
   IconLayoutKanban,
   IconUser,
   IconMenu2,
+  IconTemplate,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import GlobalSearch from "@/components/GlobalSearch";
@@ -45,6 +46,7 @@ const navItems: Record<"freelancer" | "client" | "admin", NavItem[]> = {
     { label: "Referrals", href: "/freelancer/referrals", icon: IconLink },
     { label: "Clients", href: "/freelancer/clients", icon: IconUsers, hasSubmenu: true },
     { label: "Workspaces", href: "/freelancer/workspaces", icon: IconBriefcase },
+    { label: "Templates", href: "/freelancer/templates", icon: IconTemplate },
     { label: "Invoices", href: "/freelancer/invoices", icon: IconFileInvoice },
     { label: "Messages", href: "/freelancer/messages", icon: IconMessageCircle },
     { label: "Notifications", href: "/freelancer/notifications", icon: IconBell },

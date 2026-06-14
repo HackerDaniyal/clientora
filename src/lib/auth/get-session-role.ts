@@ -12,8 +12,9 @@ export async function getSessionRole(
     .eq("id", user.id)
     .maybeSingle();
 
-  return (
-    normalizeRole(profile?.role) ||
-    normalizeRole(user.user_metadata?.role as string | undefined)
-  );
+  const dbRole = normalizeRole(profile?.role);
+  const metaRole = normalizeRole(user.user_metadata?.role as string | undefined);
+
+  // Critical Security Fix: Never trust user_metadata for admin rights
+  return dbRole || (metaRole === 'admin' ? null : metaRole);
 }
