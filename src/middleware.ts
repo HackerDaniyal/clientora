@@ -86,24 +86,27 @@ export async function middleware(request: NextRequest) {
 
   const cachedRole = normalizeRole(request.cookies.get('app_role')?.value)
   const isStrictAdminRoute = pathname.startsWith('/admin')
+  const isSelectRoleRoute = pathname === '/select-role'
 
   let userRole = isStrictAdminRoute ? null : cachedRole
+  let onboardingCompleted = !!userRole
 
   if (!userRole) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, onboarding_completed')
       .eq('id', user.id)
       .maybeSingle()
 
+    onboardingCompleted = profile?.onboarding_completed ?? false
     const dbRole = normalizeRole(profile?.role)
     const metaRole = normalizeRole(user.user_metadata?.role as string | undefined)
 
     // Critical Security Fix: Never fallback to 'admin' from user_metadata
     userRole = dbRole || (metaRole === 'admin' ? null : metaRole)
 
-    // Cache the role in cookies (unless we're explicitly bypassing it for strict admin checks)
-    if (userRole && !isStrictAdminRoute) {
+    // Cache the role in cookies only if onboarding is completed
+    if (userRole && onboardingCompleted && !isStrictAdminRoute) {
       response.cookies.set('app_role', userRole, {
         path: '/',
         maxAge: 60 * 60,
@@ -112,20 +115,20 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (isPublicRoute && pathname !== '/auth/callback') {
-    if (userRole) {
-      return NextResponse.redirect(new URL(dashboardPath(userRole), request.url))
+  // Enforce onboarding flow
+  if (!onboardingCompleted || !userRole) {
+    if (!isPublicRoute && !isSelectRoleRoute && pathname !== '/auth/callback') {
+      return NextResponse.redirect(new URL('/select-role', request.url))
+    }
+    if (isPublicRoute && pathname !== '/auth/callback') {
+      return NextResponse.redirect(new URL('/select-role', request.url))
     }
     return response
   }
 
-  if (!userRole) {
-    if (isProtectedRoute) {
-      return NextResponse.redirect(
-        new URL('/auth/signup?error=' + encodeURIComponent('Please complete account setup.'), request.url)
-      )
-    }
-    return response
+  // If fully onboarded and trying to access public routes or select-role, redirect to dashboard
+  if ((isPublicRoute && pathname !== '/auth/callback') || isSelectRoleRoute) {
+    return NextResponse.redirect(new URL(dashboardPath(userRole), request.url))
   }
 
   const requiredPortal = portalForPath(pathname)

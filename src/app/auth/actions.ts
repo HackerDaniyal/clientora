@@ -24,21 +24,20 @@ export async function login(formData: FormData) {
   // Fetch role to redirect correctly
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, onboarding_completed')
     .eq('id', data.user.id)
     .single()
 
   if (profileError || !profile) {
     console.error('Profile fetch error:', profileError)
-    // If profile doesn't exist, redirect to signup or default to freelancer
     return redirect('/auth/login?error=Profile not found. Please contact support.')
   }
 
   const role = normalizeRole(profile.role)
 
-  if (!role) {
-    console.error('Role is undefined for user:', data.user.id)
-    return redirect('/auth/login?error=User role not configured properly.')
+  if (!role || !profile.onboarding_completed) {
+    revalidatePath('/', 'layout')
+    return redirect('/select-role')
   }
 
   revalidatePath('/', 'layout')
@@ -55,12 +54,7 @@ export async function signup(formData: FormData) {
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
-  const role = normalizeRole(formData.get('role') as string)
   const fullName = (formData.get('fullName') as string)?.trim()
-
-  if (!role || (role !== 'client' && role !== 'freelancer')) {
-    return redirect('/auth/signup?error=' + encodeURIComponent('Please select Client or Freelancer account type.'))
-  }
 
   if (!fullName) {
     return redirect('/auth/signup?error=' + encodeURIComponent('Full name is required.'))
@@ -71,7 +65,6 @@ export async function signup(formData: FormData) {
     password,
     options: {
       data: {
-        role,
         full_name: fullName,
       },
     },
@@ -85,15 +78,7 @@ export async function signup(formData: FormData) {
     return redirect('/auth/login?message=' + encodeURIComponent('Account created! Please sign in.'))
   }
 
-  // Ensure profile has the correct role (trigger may lag or default to freelancer)
-  await supabase.from('profiles').upsert(
-    {
-      id: data.user.id,
-      role,
-      full_name: fullName,
-    },
-    { onConflict: 'id' }
-  )
+  // Trigger creates the basic profile with role=null
 
   const { error: loginError } = await supabase.auth.signInWithPassword({
     email,
@@ -105,16 +90,8 @@ export async function signup(formData: FormData) {
     return redirect('/auth/login?message=' + encodeURIComponent('Account created! Please sign in.'))
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', data.user.id)
-    .single()
-
-  const finalRole = normalizeRole(profile?.role) || role
-
   revalidatePath('/', 'layout')
-  redirect(dashboardPath(finalRole))
+  redirect('/')
 }
 
 export async function logout() {

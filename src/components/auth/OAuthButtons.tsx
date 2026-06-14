@@ -20,11 +20,10 @@ const GithubIcon = () => (
 );
 
 interface OAuthButtonsProps {
-  role?: "freelancer" | "client";
   next?: string;
 }
 
-export default function OAuthButtons({ role, next = "/" }: OAuthButtonsProps) {
+export default function OAuthButtons({ next = "/" }: OAuthButtonsProps) {
   const [loadingProvider, setLoadingProvider] = useState<"google" | "github" | null>(null);
 
   const handleOAuthLogin = async (provider: "google" | "github") => {
@@ -33,12 +32,8 @@ export default function OAuthButtons({ role, next = "/" }: OAuthButtonsProps) {
       const supabase = createClient();
       
       const origin = window.location.origin;
-      // Append role if provided (for signup flow)
       const redirectUrl = new URL(`${origin}/auth/callback`);
       redirectUrl.searchParams.set('next', next);
-      if (role) {
-        redirectUrl.searchParams.set('role', role);
-      }
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider,

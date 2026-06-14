@@ -16,22 +16,7 @@ import { cn } from "@/lib/utils";
 import { signup } from "@/app/auth/actions";
 import OAuthButtons from "@/components/auth/OAuthButtons";
 
-const roleOptions = [
-  {
-    value: "freelancer" as const,
-    label: "Freelancer",
-    eyebrow: "For service providers",
-    description: "Manage clients, requests, workspaces, invoices, and delivery.",
-    icon: IconBriefcase,
-  },
-  {
-    value: "client" as const,
-    label: "Client",
-    eyebrow: "For project owners",
-    description: "Submit briefs, track progress, chat, and review documents.",
-    icon: IconUser,
-  },
-];
+
 
 const highlights = [
   "Structured client onboarding",
@@ -44,7 +29,6 @@ export default function SignupPage({
 }: {
   searchParams: { error?: string };
 }) {
-  const [role, setRole] = useState<"freelancer" | "client">("freelancer");
   const error = searchParams?.error;
 
   return (
@@ -113,7 +97,7 @@ export default function SignupPage({
                   Tell us how you’ll use Clientora.
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-text-secondary">
-                  Pick your role, add your details, and we’ll take you to the right dashboard.
+                  Add your details to get started. You can choose your role after signing up.
                 </p>
               </div>
 
@@ -125,58 +109,8 @@ export default function SignupPage({
               )}
 
               <form action={signup} className="space-y-5">
-                <input type="hidden" name="role" value={role} />
-
-                <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-text-tertiary">
-                    Account type
-                  </label>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {roleOptions.map((option) => {
-                      const Icon = option.icon;
-                      const selected = role === option.value;
-
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => setRole(option.value)}
-                          className={cn(
-                            "group rounded-2xl border p-4 text-left transition-all",
-                            selected
-                              ? "border-brand-accent bg-brand-surface shadow-[0_12px_30px_rgba(58,207,132,0.18)]"
-                              : "border-black/[0.07] bg-white hover:border-brand-light hover:bg-brand-bg"
-                          )}
-                        >
-                          <div className="mb-4 flex items-center justify-between">
-                            <span
-                              className={cn(
-                                "flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
-                                selected ? "bg-brand-dark text-white" : "bg-brand-surface text-brand-mid"
-                              )}
-                            >
-                              <Icon size={20} />
-                            </span>
-                            <span
-                              className={cn(
-                                "h-4 w-4 rounded-full border transition-all",
-                                selected ? "border-brand-dark bg-brand-dark ring-4 ring-brand-accent/20" : "border-gray-300"
-                              )}
-                            />
-                          </div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-brand-mid">
-                            {option.eyebrow}
-                          </p>
-                          <p className="mt-1 font-semibold text-brand-dark">{option.label}</p>
-                          <p className="mt-1.5 text-xs leading-5 text-text-secondary">{option.description}</p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
                 <div className="pt-2">
-                  <OAuthButtons role={role} />
+                  <OAuthButtons />
                 </div>
 
                 <div className="grid gap-4">
@@ -238,7 +172,7 @@ export default function SignupPage({
                   type="submit"
                   className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-dark px-5 py-3.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(26,61,43,0.22)] transition-all hover:-translate-y-0.5 hover:bg-brand-mid hover:shadow-[0_18px_34px_rgba(26,61,43,0.24)]"
                 >
-                  Create {role === "freelancer" ? "freelancer" : "client"} account
+                  Create account
                   <IconArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
                 </button>
               </form>
