@@ -3,6 +3,47 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { sendInviteEmail } from '@/lib/email'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+// ── Security Helper ──────────────────────────────────────────────────────────
+// Validates the calling user is either the freelancer who owns the workspace
+// or an authorised member.  Returns the workspace row for further use.
+// Throws if the user has no access — callers should NOT catch this.
+async function checkWorkspaceAccess(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  userId: string,
+  requireFreelancer = false   // set true for destructive/owner-only actions
+) {
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('id, freelancer_id, client_id, name')
+    .eq('id', workspaceId)
+    .single()
+
+  if (!workspace) throw new Error('Workspace not found')
+
+  const isOwner = workspace.freelancer_id === userId
+  const isClient = workspace.client_id === userId
+
+  if (requireFreelancer && !isOwner) {
+    throw new Error('Unauthorized: only the workspace owner can perform this action')
+  }
+
+  if (!isOwner && !isClient) {
+    // Check workspace_members table
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', userId)
+      .single()
+
+    if (!membership) throw new Error('Unauthorized: you do not have access to this workspace')
+  }
+
+  return workspace
+}
 
 export async function toggleMessageReaction(messageId: string, emoji: string) {
   const supabase = createClient()
@@ -94,6 +135,10 @@ export async function createTask(
   
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
+
+  // Security: only workspace owner/members can create tasks; clients cannot
+  const workspace = await checkWorkspaceAccess(supabase, workspaceId, user.id)
+  if (workspace.client_id === user.id) throw new Error('Unauthorized: clients cannot create tasks')
 
   // Get next sort_order
   const { data: maxOrder } = await supabase
@@ -236,6 +281,10 @@ export async function updateTask(
 
   if (!task) throw new Error('Task not found')
 
+  // Security: verify user can access this workspace and is not a client
+  const workspace = await checkWorkspaceAccess(supabase, task.workspace_id, user.id)
+  if (workspace.client_id === user.id) throw new Error('Unauthorized: clients cannot update tasks')
+
   const updateData: Record<string, unknown> = { ...updates }
   if (updates.status === 'completed') {
     updateData.completed_at = new Date().toISOString()
@@ -280,6 +329,9 @@ export async function deleteTask(taskId: string) {
 
   if (!task) throw new Error('Task not found')
 
+  // Security: only freelancer/members can delete tasks
+  await checkWorkspaceAccess(supabase, task.workspace_id, user.id, true)
+
   const { error } = await supabase
     .from('tasks')
     .delete()
@@ -309,6 +361,18 @@ export async function reorderTasks(updates: { id: string; sort_order: number }[]
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
+  if (updates.length === 0) return
+
+  // Security: resolve workspace from first task and validate access BEFORE bulk update
+  const { data: firstTask } = await supabase
+    .from('tasks')
+    .select('workspace_id')
+    .eq('id', updates[0].id)
+    .single()
+
+  if (!firstTask) throw new Error('Task not found')
+  await checkWorkspaceAccess(supabase, firstTask.workspace_id, user.id)
+
   for (const update of updates) {
     await supabase
       .from('tasks')
@@ -316,18 +380,7 @@ export async function reorderTasks(updates: { id: string; sort_order: number }[]
       .eq('id', update.id)
   }
 
-  // Get workspace_id from first task for revalidation
-  if (updates.length > 0) {
-    const { data: task } = await supabase
-      .from('tasks')
-      .select('workspace_id')
-      .eq('id', updates[0].id)
-      .single()
-
-    if (task) {
-      revalidatePath(`/workspace/${task.workspace_id}`)
-    }
-  }
+  revalidatePath(`/workspace/${firstTask.workspace_id}`)
 }
 
 export async function addTaskComment(taskId: string, content: string) {
@@ -343,6 +396,9 @@ export async function addTaskComment(taskId: string, content: string) {
     .single()
 
   if (!task) throw new Error('Task not found')
+
+  // Security: only workspace participants can comment
+  await checkWorkspaceAccess(supabase, task.workspace_id, user.id)
 
   const { error } = await supabase
     .from('task_comments')
@@ -601,6 +657,9 @@ export async function removeMember(memberId: string, workspaceId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
+  // Security: only the freelancer (workspace owner) can remove members
+  await checkWorkspaceAccess(supabase, workspaceId, user.id, true)
+
   const { error } = await supabase
     .from('workspace_members')
     .delete()
@@ -643,6 +702,9 @@ export async function createDocument(workspaceId: string, type: string, title: s
   
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
+
+  // Security: only the freelancer (workspace owner) can create documents
+  await checkWorkspaceAccess(supabase, workspaceId, user.id, true)
 
   // Generate document number
   const docNumber = `${type.toUpperCase().substring(0, 3)}-${Date.now().toString().slice(-6)}`
@@ -691,12 +753,15 @@ export async function sendDocument(documentId: string) {
 
   const { data: document } = await supabase
     .from('workspace_documents')
-    .select('*, workspaces!inner(client_id, name)')
+    .select('*, workspaces!inner(client_id, name, freelancer_id)')
     .eq('id', documentId)
     .single()
 
-  if (!document) {
-    throw new Error('Document not found')
+  if (!document) throw new Error('Document not found')
+
+  // Security: only the freelancer who owns this workspace can send documents
+  if (document.workspaces.freelancer_id !== user.id) {
+    throw new Error('Unauthorized: only the workspace owner can send documents')
   }
 
   const { error } = await supabase
@@ -742,6 +807,9 @@ export async function deleteDocument(documentId: string, workspaceId: string) {
   
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
+
+  // Security: only the freelancer (workspace owner) can delete documents
+  await checkWorkspaceAccess(supabase, workspaceId, user.id, true)
 
   const { error } = await supabase
     .from('workspace_documents')
@@ -889,6 +957,9 @@ export async function updateDocument(documentId: string, workspaceId: string, ti
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
+
+  // Security: only the freelancer can edit documents
+  await checkWorkspaceAccess(supabase, workspaceId, user.id, true)
 
   const { error } = await supabase
     .from('workspace_documents')
@@ -1076,10 +1147,12 @@ export async function deleteTemplate(templateId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
+  // Security: only delete templates you own
   const { error } = await supabase
     .from('document_templates')
     .delete()
     .eq('id', templateId)
+    .eq('freelancer_id', user.id)  // Ensures you can only delete your own templates
 
   if (error) {
     console.error('Error deleting template:', error)

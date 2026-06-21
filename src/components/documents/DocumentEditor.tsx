@@ -156,6 +156,7 @@ export default function DocumentEditor({ type, workspaceName, clientName, freela
       await saveTemplate(templateName.trim(), type, content);
       setTemplateName('');
       setShowSaveTemplate(false);
+      alert('Template saved successfully to your library!');
       // Refresh templates
       const supabase = createClient();
       const { data } = await supabase
@@ -469,17 +470,25 @@ function ProposalFields({ data, setData, Section, inputCls, textareaCls }: {
       </Section>
 
       <Section id="items" title="Pricing">
-        <div className="space-y-2">
+        <div className="space-y-3">
           {data.pricing.map((item, i) => (
-            <div key={item.id} className="flex gap-2 items-center">
-              <input className={`${inputCls} flex-1`} placeholder="Description" value={item.description} onChange={(e) => { const arr = [...data.pricing]; arr[i] = { ...arr[i], description: e.target.value }; upd("pricing", arr); }} />
-              <input type="number" className={`${inputCls} w-16`} placeholder="Qty" value={item.quantity} onChange={(e) => { const arr = [...data.pricing]; arr[i] = { ...arr[i], quantity: Number(e.target.value) }; upd("pricing", arr); }} />
-              <input type="number" className={`${inputCls} w-24`} placeholder="Rate" value={item.rate} onChange={(e) => { const arr = [...data.pricing]; arr[i] = { ...arr[i], rate: Number(e.target.value) }; upd("pricing", arr); }} />
-              <span className="text-[12px] text-gray-500 w-20 text-right">{fmt(item.quantity * item.rate)}</span>
-              <button onClick={() => upd("pricing", data.pricing.filter((_, j) => j !== i))} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg shrink-0"><IconTrash size={14} /></button>
+            <div key={item.id} className="p-3 bg-white border border-gray-150 rounded-lg space-y-2 hover:border-brand-accent/20 transition-all duration-200">
+              <div className="flex gap-2 items-center">
+                <input className={`${inputCls} flex-1`} placeholder="Description" value={item.description} onChange={(e) => { const arr = [...data.pricing]; arr[i] = { ...arr[i], description: e.target.value }; upd("pricing", arr); }} />
+                <button onClick={() => upd("pricing", data.pricing.filter((_, j) => j !== i))} className="p-1.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-lg shrink-0 transition" title="Delete item"><IconTrash size={14} /></button>
+              </div>
+              <div className="flex gap-2 items-center justify-between">
+                <div className="flex gap-2 items-center">
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase">Qty</span>
+                  <input type="number" className={`${inputCls} w-16`} placeholder="Qty" value={item.quantity} onChange={(e) => { const arr = [...data.pricing]; arr[i] = { ...arr[i], quantity: Number(e.target.value) }; upd("pricing", arr); }} />
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase ml-1">Rate</span>
+                  <input type="number" className={`${inputCls} w-24`} placeholder="Rate" value={item.rate} onChange={(e) => { const arr = [...data.pricing]; arr[i] = { ...arr[i], rate: Number(e.target.value) }; upd("pricing", arr); }} />
+                </div>
+                <span className="text-[12px] font-medium text-gray-600">{fmt(item.quantity * item.rate)}</span>
+              </div>
             </div>
           ))}
-          <button onClick={() => upd("pricing", [...data.pricing, { id: uid(), description: "", quantity: 1, rate: 0 }])} className="flex items-center gap-1 text-[12px] text-brand-mid font-medium hover:underline"><IconPlus size={14} /> Add line item</button>
+          <button onClick={() => upd("pricing", [...data.pricing, { id: uid(), description: "", quantity: 1, rate: 0 }])} className="flex items-center gap-1 text-[12px] text-brand-mid font-medium hover:underline mt-1"><IconPlus size={14} /> Add line item</button>
         </div>
         <div className="flex gap-3 pt-2">
           <Field label="Tax Rate (%)"><input type="number" className={inputCls} value={data.taxRate} onChange={(e) => upd("taxRate", Number(e.target.value))} /></Field>
@@ -494,6 +503,44 @@ function ProposalFields({ data, setData, Section, inputCls, textareaCls }: {
       <Section id="extras" title="Terms & Notes">
         <Field label="Terms & Conditions"><textarea className={textareaCls} rows={4} value={data.terms} onChange={(e) => upd("terms", e.target.value)} /></Field>
         <Field label="Additional Notes"><textarea className={textareaCls} rows={2} value={data.notes} onChange={(e) => upd("notes", e.target.value)} /></Field>
+      </Section>
+
+      <Section id="signatures" title="Acceptance & Footer">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Service Provider Name">
+            <input className={inputCls} value={data.freelancerName} onChange={(e) => upd("freelancerName", e.target.value)} />
+          </Field>
+          <Field label="Service Provider Title / Role">
+            <input className={inputCls} placeholder="Service Provider" value={data.serviceProviderRole || ""} onChange={(e) => upd("serviceProviderRole", e.target.value)} />
+          </Field>
+        </div>
+        <Field label="Service Provider Date Line">
+          <input className={inputCls} placeholder="Date: _______________" value={data.serviceProviderDate || ""} onChange={(e) => upd("serviceProviderDate", e.target.value)} />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Client Name">
+            <input className={inputCls} value={data.clientName} onChange={(e) => upd("clientName", e.target.value)} />
+          </Field>
+          <Field label="Client Title / Role">
+            <input className={inputCls} placeholder="Client" value={data.clientRole || ""} onChange={(e) => upd("clientRole", e.target.value)} />
+          </Field>
+        </div>
+        <Field label="Client Date Line">
+          <input className={inputCls} placeholder="Date: _______________" value={data.clientDate || ""} onChange={(e) => upd("clientDate", e.target.value)} />
+        </Field>
+        <div className="border-t border-gray-100 my-2 pt-2" />
+        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Footer Details</p>
+        <Field label="Footer Company Name">
+          <input className={inputCls} value={data.companyName} onChange={(e) => upd("companyName", e.target.value)} />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Footer Email">
+            <input className={inputCls} value={data.freelancerEmail} onChange={(e) => upd("freelancerEmail", e.target.value)} />
+          </Field>
+          <Field label="Footer Website">
+            <input className={inputCls} value={data.freelancerWebsite} onChange={(e) => upd("freelancerWebsite", e.target.value)} />
+          </Field>
+        </div>
       </Section>
     </>
   );
@@ -554,17 +601,25 @@ function InvoiceFields({ data, setData, Section, inputCls, textareaCls }: {
       </Section>
 
       <Section id="items" title="Line Items">
-        <div className="space-y-2">
+        <div className="space-y-3">
           {data.items.map((item, i) => (
-            <div key={item.id} className="flex gap-2 items-center">
-              <input className={`${inputCls} flex-1`} placeholder="Description" value={item.description} onChange={(e) => { const arr = [...data.items]; arr[i] = { ...arr[i], description: e.target.value }; upd("items", arr); }} />
-              <input type="number" className={`${inputCls} w-16`} placeholder="Qty" value={item.quantity} onChange={(e) => { const arr = [...data.items]; arr[i] = { ...arr[i], quantity: Number(e.target.value) }; upd("items", arr); }} />
-              <input type="number" className={`${inputCls} w-24`} placeholder="Rate" value={item.rate} onChange={(e) => { const arr = [...data.items]; arr[i] = { ...arr[i], rate: Number(e.target.value) }; upd("items", arr); }} />
-              <span className="text-[12px] text-gray-500 w-20 text-right">{fmt(item.quantity * item.rate)}</span>
-              <button onClick={() => upd("items", data.items.filter((_, j) => j !== i))} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg shrink-0"><IconTrash size={14} /></button>
+            <div key={item.id} className="p-3 bg-white border border-gray-150 rounded-lg space-y-2 hover:border-brand-accent/20 transition-all duration-200">
+              <div className="flex gap-2 items-center">
+                <input className={`${inputCls} flex-1`} placeholder="Description" value={item.description} onChange={(e) => { const arr = [...data.items]; arr[i] = { ...arr[i], description: e.target.value }; upd("items", arr); }} />
+                <button onClick={() => upd("items", data.items.filter((_, j) => j !== i))} className="p-1.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-lg shrink-0 transition" title="Delete item"><IconTrash size={14} /></button>
+              </div>
+              <div className="flex gap-2 items-center justify-between">
+                <div className="flex gap-2 items-center">
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase">Qty</span>
+                  <input type="number" className={`${inputCls} w-16`} placeholder="Qty" value={item.quantity} onChange={(e) => { const arr = [...data.items]; arr[i] = { ...arr[i], quantity: Number(e.target.value) }; upd("items", arr); }} />
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase ml-1">Rate</span>
+                  <input type="number" className={`${inputCls} w-24`} placeholder="Rate" value={item.rate} onChange={(e) => { const arr = [...data.items]; arr[i] = { ...arr[i], rate: Number(e.target.value) }; upd("items", arr); }} />
+                </div>
+                <span className="text-[12px] font-medium text-gray-600">{fmt(item.quantity * item.rate)}</span>
+              </div>
             </div>
           ))}
-          <button onClick={() => upd("items", [...data.items, { id: uid(), description: "", quantity: 1, rate: 0 }])} className="flex items-center gap-1 text-[12px] text-brand-mid font-medium hover:underline"><IconPlus size={14} /> Add item</button>
+          <button onClick={() => upd("items", [...data.items, { id: uid(), description: "", quantity: 1, rate: 0 }])} className="flex items-center gap-1 text-[12px] text-brand-mid font-medium hover:underline mt-1"><IconPlus size={14} /> Add item</button>
         </div>
         <div className="flex gap-3 pt-2">
           <Field label="Tax Rate (%)"><input type="number" className={inputCls} value={data.taxRate} onChange={(e) => upd("taxRate", Number(e.target.value))} /></Field>

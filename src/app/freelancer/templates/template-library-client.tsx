@@ -298,13 +298,23 @@ export default function TemplateLibraryClient({
   // Called by DocumentEditor when "Save" is hit — saves as a new template
   const handleSaveTemplate = async (docType: DocumentType, title: string, content: Record<string, unknown>) => {
     const name = editorTemplateName || title;
-    const { data } = await supabase
-      .from("document_templates")
-      .insert({ freelancer_id: freelancerId, name, type: docType, content })
-      .select()
-      .single();
-    if (data) setTemplates((prev) => [data as Template, ...prev]);
-    setEditorOpen(false);
+    try {
+      const { data, error } = await supabase
+        .from("document_templates")
+        .insert({ freelancer_id: freelancerId, name, type: docType, content })
+        .select()
+        .single();
+      if (error) throw error;
+      if (data) {
+        setTemplates((prev) => [data as Template, ...prev]);
+        setActiveTab("my-templates");
+        alert("Template saved successfully to your library!");
+      }
+      setEditorOpen(false);
+    } catch (e: any) {
+      console.error("Save template error:", e);
+      alert("Failed to save template to library: " + (e.message || "Unknown error"));
+    }
   };
 
   return (

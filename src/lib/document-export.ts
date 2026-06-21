@@ -3,18 +3,34 @@ import type { ProposalData, InvoiceData, ContractData } from "@/components/docum
 import { calcSubtotal, calcTax, fmt } from "@/components/documents/types";
 
 // ────────────────────────────────────────────────────────────
-//  PDF Export (html2pdf.js — wraps html2canvas + jsPDF)
+//  PDF Export — single-page, full-content (no page breaks)
 // ────────────────────────────────────────────────────────────
 export async function exportPDF(element: HTMLElement, filename: string) {
   const html2pdf = (await import("html2pdf.js")).default;
+
+  // Measure the element's full natural dimensions (px → mm at 96 dpi)
+  const px2mm = (px: number) => (px * 25.4) / 96;
+  const widthMm  = Math.ceil(px2mm(element.scrollWidth));
+  const heightMm = Math.ceil(px2mm(element.scrollHeight));
+
   await html2pdf()
     .set({
-      margin: [0, 0, 0, 0],
+      margin: 0,
       filename,
       image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        scrollX: 0,
+        scrollY: 0,
+      },
+      // Custom page size = exact element dimensions → always 1 page
+      jsPDF: {
+        unit: "mm",
+        format: [widthMm, heightMm],
+        orientation: "portrait",
+      },
     })
     .from(element)
     .save();

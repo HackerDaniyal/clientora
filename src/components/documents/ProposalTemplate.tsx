@@ -148,13 +148,13 @@ export default function ProposalTemplate({ data }: { data: ProposalData }) {
           <div style={{ display: "flex", gap: 48 }}>
             <div style={{ flex: 1 }}>
               <div style={{ borderBottom: "1px solid #9ca3af", marginBottom: 6, height: 32 }}></div>
-              <div style={{ fontSize: 11, color: "#6b7280" }}>{data.freelancerName} — Service Provider</div>
-              <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>Date: _______________</div>
+              <div style={{ fontSize: 11, color: "#6b7280" }}>{data.freelancerName} — {data.serviceProviderRole || "Service Provider"}</div>
+              <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{data.serviceProviderDate || "Date: _______________"}</div>
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ borderBottom: "1px solid #9ca3af", marginBottom: 6, height: 32 }}></div>
-              <div style={{ fontSize: 11, color: "#6b7280" }}>{data.clientName} — Client</div>
-              <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>Date: _______________</div>
+              <div style={{ fontSize: 11, color: "#6b7280" }}>{data.clientName} — {data.clientRole || "Client"}</div>
+              <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{data.clientDate || "Date: _______________"}</div>
             </div>
           </div>
         </section>

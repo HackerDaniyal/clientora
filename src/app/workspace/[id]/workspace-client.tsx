@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { 
@@ -44,15 +45,51 @@ import { createClient } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { createTask, toggleTask, updateTask, deleteTask, reorderTasks, addTaskComment, deleteTaskComment, inviteMember, removeMember, changeMemberRole, createDocument, updateDocument, sendDocument, deleteDocument, updateWorkspaceAssets, sendAssetsToFreelancer, markAsPaid, acceptProposal, counterOfferProposal, submitWorkspaceReview } from "./actions";
-import WorkspaceChat, { type ChatMessage } from "@/components/workspace/WorkspaceChat";
-import TimeTracker from "@/components/workspace/TimeTracker";
-import DocumentEditor from "@/components/documents/DocumentEditor";
-import type { DocumentType } from "@/components/documents/types";
-import ProposalTemplate from "@/components/documents/ProposalTemplate";
-import InvoiceTemplate from "@/components/documents/InvoiceTemplate";
-import ContractTemplate from "@/components/documents/ContractTemplate";
-import { exportPDF, exportProposalDOC, exportInvoiceDOC, exportContractDOC } from "@/lib/document-export";
 import { useToast } from "@/components/ToastProvider";
+import type { ChatMessage } from "@/components/workspace/WorkspaceChat";
+import type { DocumentType } from "@/components/documents/types";
+
+// ── Dynamic (code-split) imports ────────────────────────────────────────────
+// These heavy components are only loaded when the user navigates to the
+// relevant tab, keeping the initial JS bundle small.
+const WorkspaceChat = dynamic(() => import("@/components/workspace/WorkspaceChat"), {
+  loading: () => <TabSkeleton />,
+  ssr: false,
+});
+const TimeTracker = dynamic(() => import("@/components/workspace/TimeTracker"), {
+  loading: () => <div className="h-40 rounded-xl bg-brand-light/30 animate-pulse" />,
+  ssr: false,
+});
+const DocumentEditor = dynamic(() => import("@/components/documents/DocumentEditor"), {
+  loading: () => <TabSkeleton />,
+  ssr: false,
+});
+const ProposalTemplate = dynamic(() => import("@/components/documents/ProposalTemplate"), {
+  loading: () => <div className="h-64 rounded-xl bg-brand-light/30 animate-pulse" />,
+  ssr: false,
+});
+const InvoiceTemplate = dynamic(() => import("@/components/documents/InvoiceTemplate"), {
+  loading: () => <div className="h-64 rounded-xl bg-brand-light/30 animate-pulse" />,
+  ssr: false,
+});
+const ContractTemplate = dynamic(() => import("@/components/documents/ContractTemplate"), {
+  loading: () => <div className="h-64 rounded-xl bg-brand-light/30 animate-pulse" />,
+  ssr: false,
+});
+
+// Shared skeleton for tab loading states
+function TabSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="h-8 w-1/3 rounded-lg bg-brand-light/40" />
+      <div className="h-32 rounded-xl bg-brand-light/30" />
+      <div className="h-24 rounded-xl bg-brand-light/20" />
+    </div>
+  );
+}
+
+// Re-export document export utilities (imported lazily inline where needed)
+import { exportPDF, exportProposalDOC, exportInvoiceDOC, exportContractDOC } from "@/lib/document-export";
 
 interface WorkspaceClientProps {
   workspace: any;

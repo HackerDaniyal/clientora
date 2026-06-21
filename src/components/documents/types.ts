@@ -34,6 +34,10 @@ export interface ProposalData {
   notes: string;
   logoUrl: string;
   brandColor: string;
+  serviceProviderRole?: string;
+  clientRole?: string;
+  serviceProviderDate?: string;
+  clientDate?: string;
 }
 
 // ── Invoice ──

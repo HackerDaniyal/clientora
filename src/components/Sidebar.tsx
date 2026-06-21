@@ -4,14 +4,14 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { 
-  IconLayoutDashboard, 
-  IconUsers, 
-  IconBriefcase, 
-  IconFileInvoice, 
-  IconMessageCircle, 
-  IconSettings, 
-  IconChecklist, 
+import {
+  IconLayoutDashboard,
+  IconUsers,
+  IconBriefcase,
+  IconFileInvoice,
+  IconMessageCircle,
+  IconSettings,
+  IconChecklist,
   IconFileText,
   IconChevronDown,
   IconSparkles,
@@ -123,94 +123,94 @@ export default function Sidebar({ role }: SidebarProps) {
         role="navigation"
         aria-label="Main navigation"
       >
-      {/* Brand Logo */}
-      <div className="p-6 flex items-center gap-2">
-        <div className="w-7 h-7 bg-brand-dark rounded-small flex items-center justify-center">
-          <div className="flex gap-[2px]">
-            <div className="w-[5px] h-2 bg-brand-accent rounded-[1px]"></div>
-            <div className="w-[5px] h-2 bg-brand-accent rounded-[1px] opacity-60"></div>
+        {/* Brand Logo */}
+        <div className="p-6 flex items-center gap-2">
+          <div className="w-7 h-7 bg-brand-dark rounded-small flex items-center justify-center">
+            <div className="flex gap-[2px]">
+              <div className="w-[5px] h-2 bg-brand-accent rounded-[1px]"></div>
+              <div className="w-[5px] h-2 bg-brand-accent rounded-[1px] opacity-60"></div>
+            </div>
           </div>
+          <span className="text-[14px] font-medium text-brand-dark tracking-tight uppercase">
+            ClientFlow
+          </span>
         </div>
-        <span className="text-[14px] font-medium text-brand-dark tracking-tight uppercase">
-          ClientFlow
-        </span>
-      </div>
 
-      {/* Global Search */}
-      {role === "freelancer" && (
-        <div className="px-3 mt-2 mb-2">
-          <GlobalSearch />
-        </div>
-      )}
+        {/* Global Search */}
+        {role === "freelancer" && (
+          <div className="px-3 mt-2 mb-2">
+            <GlobalSearch />
+          </div>
+        )}
 
-      {/* Nav Items */}
-      <nav className="flex-1 px-3 space-y-1">
-        {items.map((item) => {
-          const isActive = pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-2 px-[10px] py-[6px] rounded-small text-[13px] transition-colors group",
-                isActive 
-                  ? "bg-brand-dark text-white" 
-                  : "text-text-secondary hover:bg-brand-light/30"
-              )}
+        {/* Nav Items */}
+        <nav className="flex-1 px-3 space-y-1">
+          {items.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-2 px-[10px] py-[6px] rounded-small text-[13px] transition-colors group",
+                  isActive
+                    ? "bg-brand-dark text-white"
+                    : "text-text-secondary hover:bg-brand-light/30"
+                )}
+              >
+                <item.icon size={16} stroke={2} className={cn(isActive ? "text-white" : "text-text-secondary")} />
+                <span className="flex-1">{item.label}</span>
+                {item.hasSubmenu && (
+                  <IconChevronDown size={12} stroke={2} className={cn(isActive ? "text-white" : "text-text-tertiary")} />
+                )}
+                {item.badge && (
+                  <span className="badge badge-danger !text-[9px] !px-1.5 !py-0 min-w-[18px] justify-center">
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* AI Assistant CTA at bottom */}
+        <div className="p-4 mt-auto space-y-3">
+          <div className="bg-[#8BC38A22] border-[0.5px] border-brand-accent rounded-medium p-3 flex flex-col gap-2 items-center text-center">
+            <IconSparkles size={18} stroke={2} className="text-brand-dark" />
+            <span className="text-[11px] font-medium text-brand-dark">Need help?</span>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-ai-assistant"))}
+              className="text-[10px] text-brand-dark underline opacity-70 hover:opacity-100"
             >
-              <item.icon size={16} stroke={2} className={cn(isActive ? "text-white" : "text-text-secondary")} />
-              <span className="flex-1">{item.label}</span>
-              {item.hasSubmenu && (
-                <IconChevronDown size={12} stroke={2} className={cn(isActive ? "text-white" : "text-text-tertiary")} />
-              )}
-              {item.badge && (
-                <span className="badge badge-danger !text-[9px] !px-1.5 !py-0 min-w-[18px] justify-center">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
+              Ask Gemini
+            </button>
+          </div>
 
-      {/* AI Assistant CTA at bottom */}
-      <div className="p-4 mt-auto space-y-3">
-        <div className="bg-[#8BC38A22] border-[0.5px] border-brand-accent rounded-medium p-3 flex flex-col gap-2 items-center text-center">
-          <IconSparkles size={18} stroke={2} className="text-brand-dark" />
-          <span className="text-[11px] font-medium text-brand-dark">Need help?</span>
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent("open-ai-assistant"))}
-            className="text-[10px] text-brand-dark underline opacity-70 hover:opacity-100"
+          {/* User profile */}
+          <Link
+            href={`/${role}/settings`}
+            className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-brand-light/30 transition-colors"
           >
-            Ask Gemini
-          </button>
+            <div className="w-8 h-8 rounded-full bg-brand-accent/20 flex items-center justify-center text-brand-accent text-xs font-semibold shrink-0 overflow-hidden">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                profile?.full_name?.charAt(0).toUpperCase() || <IconUser size={16} />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-medium text-brand-dark truncate">
+                {profile?.full_name || "User"}
+              </p>
+              <p className="text-[10px] text-text-tertiary truncate">
+                {profile?.email || ""}
+              </p>
+            </div>
+            <IconSettings size={14} className="text-text-tertiary shrink-0" />
+          </Link>
         </div>
-
-        {/* User profile */}
-        <Link
-          href={`/${role}/settings`}
-          className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-brand-light/30 transition-colors"
-        >
-          <div className="w-8 h-8 rounded-full bg-brand-accent/20 flex items-center justify-center text-brand-accent text-xs font-semibold shrink-0 overflow-hidden">
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-            ) : (
-              profile?.full_name?.charAt(0).toUpperCase() || <IconUser size={16} />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[12px] font-medium text-brand-dark truncate">
-              {profile?.full_name || "User"}
-            </p>
-            <p className="text-[10px] text-text-tertiary truncate">
-              {profile?.email || ""}
-            </p>
-          </div>
-          <IconSettings size={14} className="text-text-tertiary shrink-0" />
-        </Link>
-      </div>
-    </aside>
+      </aside>
     </>
   );
 }

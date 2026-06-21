@@ -370,17 +370,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Trust Bar ── */}
-      <section className="px-6 py-10 bg-brand-surface/50 border-y border-gray-100">
-        <div className="max-w-5xl mx-auto text-center">
-          <p className="text-[12px] text-text-tertiary uppercase tracking-widest mb-6 font-medium">Trusted by teams at</p>
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-14 opacity-40 grayscale">
-            {["Upwork", "Fiverr", "Toptal", "Contra", "Dribbble"].map((name) => (
-              <span key={name} className="text-[16px] md:text-[18px] font-bold text-brand-dark tracking-wide">{name}</span>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* ── How It Works ── */}
       <section id="how-it-works" className="px-6 py-24">
