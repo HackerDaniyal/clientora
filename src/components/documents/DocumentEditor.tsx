@@ -453,12 +453,15 @@ function ProposalFields({ data, setData, Section, inputCls, textareaCls }: {
       </Section>
 
       <Section id="timeline" title="Timeline">
-        <div className="space-y-2">
+        <div className="space-y-3">
           {data.timeline.map((row, i) => (
-            <div key={row.id} className="flex gap-2 items-start">
-              <input className={inputCls} placeholder="Phase" value={row.phase} onChange={(e) => { const arr = [...data.timeline]; arr[i] = { ...arr[i], phase: e.target.value }; upd("timeline", arr); }} />
-              <input className={`${inputCls} w-24`} placeholder="Duration" value={row.duration} onChange={(e) => { const arr = [...data.timeline]; arr[i] = { ...arr[i], duration: e.target.value }; upd("timeline", arr); }} />
-              <button onClick={() => upd("timeline", data.timeline.filter((_, j) => j !== i))} className="p-2 text-red-400 hover:bg-red-50 rounded-lg shrink-0"><IconTrash size={14} /></button>
+            <div key={row.id} className="p-3 bg-white border border-gray-200 rounded-lg space-y-2 relative group hover:border-brand-accent/30 transition-all duration-200">
+              <div className="flex gap-2">
+                <input className={inputCls} placeholder="Phase (e.g., UX Design)" value={row.phase} onChange={(e) => { const arr = [...data.timeline]; arr[i] = { ...arr[i], phase: e.target.value }; upd("timeline", arr); }} />
+                <input className={`${inputCls} w-28`} placeholder="Duration" value={row.duration} onChange={(e) => { const arr = [...data.timeline]; arr[i] = { ...arr[i], duration: e.target.value }; upd("timeline", arr); }} />
+                <button onClick={() => upd("timeline", data.timeline.filter((_, j) => j !== i))} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg shrink-0 transition" title="Delete phase"><IconTrash size={14} /></button>
+              </div>
+              <input className={inputCls} placeholder="Key Deliverables (e.g., Wireframes, sitemap)" value={row.deliverables || ""} onChange={(e) => { const arr = [...data.timeline]; arr[i] = { ...arr[i], deliverables: e.target.value }; upd("timeline", arr); }} />
             </div>
           ))}
           <button onClick={() => upd("timeline", [...data.timeline, { id: uid(), phase: "", duration: "", deliverables: "" }])} className="flex items-center gap-1 text-[12px] text-brand-mid font-medium hover:underline"><IconPlus size={14} /> Add phase</button>
